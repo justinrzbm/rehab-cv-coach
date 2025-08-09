@@ -10,7 +10,6 @@ import ExercisesPage from "@/pages/Exercises";
 import ProgressPage from "@/pages/Progress";
 import ModuleInfo from "@/pages/ModuleInfo";      // NEW
 import ModuleSetup from "@/pages/ModuleSetup";    // UPDATED (tutorial)
-import ModuleReady from "@/pages/ModuleReady";    // NEW
 import ModuleRun from "@/pages/ModuleRun";        // EXISTING
 import NotFound from "@/pages/NotFound";
 
@@ -27,7 +26,6 @@ const App = () => (
           <Route path="/modules" element={<ModulesPage />} />
           <Route path="/modules/:slug/info" element={<ModuleInfo />} />
           <Route path="/modules/:slug/setup" element={<ModuleSetup />} />
-          <Route path="/modules/:slug/ready" element={<ModuleReady />} />
           <Route path="/modules/:slug/run" element={<ModuleRun />} />
           <Route path="/exercises" element={<ExercisesPage />} />
           <Route path="/progress" element={<ProgressPage />} />
