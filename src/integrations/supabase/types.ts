@@ -14,7 +14,174 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      exercise_attempts: {
+        Row: {
+          created_at: string
+          data: Json | null
+          duration_seconds: number | null
+          exercise_name: string
+          id: string
+          improvement_rom: boolean | null
+          improvement_speed: boolean | null
+          improvement_success_rate: boolean | null
+          metrics: Json | null
+          rom: number | null
+          success_rate: number | null
+          successful_reps: number | null
+          total_reps: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          duration_seconds?: number | null
+          exercise_name: string
+          id?: string
+          improvement_rom?: boolean | null
+          improvement_speed?: boolean | null
+          improvement_success_rate?: boolean | null
+          metrics?: Json | null
+          rom?: number | null
+          success_rate?: number | null
+          successful_reps?: number | null
+          total_reps?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          duration_seconds?: number | null
+          exercise_name?: string
+          id?: string
+          improvement_rom?: boolean | null
+          improvement_speed?: boolean | null
+          improvement_success_rate?: boolean | null
+          metrics?: Json | null
+          rom?: number | null
+          success_rate?: number | null
+          successful_reps?: number | null
+          total_reps?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      module_attempts: {
+        Row: {
+          created_at: string
+          data: Json | null
+          duration_seconds: number | null
+          id: string
+          is_completed: boolean
+          metrics: Json | null
+          module_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          duration_seconds?: number | null
+          id?: string
+          is_completed?: boolean
+          metrics?: Json | null
+          module_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          duration_seconds?: number | null
+          id?: string
+          is_completed?: boolean
+          metrics?: Json | null
+          module_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      module_task_attempts: {
+        Row: {
+          created_at: string
+          data: Json | null
+          duration_seconds: number | null
+          id: string
+          is_pass: boolean
+          metrics: Json | null
+          module_attempt_id: string
+          task_name: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          duration_seconds?: number | null
+          id?: string
+          is_pass: boolean
+          metrics?: Json | null
+          module_attempt_id: string
+          task_name: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          duration_seconds?: number | null
+          id?: string
+          is_pass?: boolean
+          metrics?: Json | null
+          module_attempt_id?: string
+          task_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_task_attempts_module_attempt_id_fkey"
+            columns: ["module_attempt_id"]
+            isOneToOne: false
+            referencedRelation: "module_attempts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
