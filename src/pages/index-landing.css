@@ -1,0 +1,99 @@
+:root {
+  --bg: #f8fafc;
+  --text: #222;
+  --magenta: #CC79A7; /* pink/magenta */
+  --blue: #0072B2;
+  --green: #009E5F;   /* teal-green */
+}
+
+#landing-root {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Header */
+.header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 2.5rem 1.5rem;
+  box-sizing: border-box;
+}
+.header-btn {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: var(--text);
+  transition: color .2s;
+}
+.header-btn:active { color: var(--blue); }
+
+/* Greeting */
+.main-greeting {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 2.5rem 0;
+  text-align: center;
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity 600ms ease, transform 600ms ease;
+}
+.main-greeting.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Cards row */
+.main-row {
+  display: flex;
+  gap: 2.5rem;
+  justify-content: center;
+  align-items: stretch;
+  width: 100%;
+  max-width: 900px;
+  padding: 0 1rem 3rem;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+}
+
+/* Card */
+.main-card {
+  flex: 1 1 0;
+  min-width: 180px;
+  min-height: 220px;
+  background: #fff;
+  border-radius: 2.5rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+  padding: 2.5rem 1.5rem 1.5rem;
+  border: 4px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .75rem;
+  cursor: pointer;
+  transition: box-shadow .2s, transform .2s;
+  user-select: none;
+}
+.main-card:active {
+  transform: scale(1.04);
+  box-shadow: 0 4px 32px rgba(0,0,0,0.13);
+}
+
+.main-card.mod { border-color: var(--magenta); }
+.main-card.ex  { border-color: var(--blue); }
+.main-card.prog{ border-color: var(--green); }
+
+.icon { filter: drop-shadow(0 0 .5rem rgba(0,0,0,0.08)); }
+.label { font-size: 1.6rem; font-weight: 600; color: var(--text); }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .main-row { flex-direction: column; gap: 2rem; }
+  .main-card { width: 100%; min-width: 0; }
+}
