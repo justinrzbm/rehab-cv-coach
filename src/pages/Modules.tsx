@@ -14,7 +14,7 @@ const MODULES = [
 ];
 
 const ModulesPage: React.FC = () => {
-  useSEO("Rehab Coach – Modules", "Select a daily activity module like Feeding or Writing.");
+  useSEO("Rehab Coach – Rehab Activities", "Select a daily rehab activity like Feeding or Writing.");
   const nav = useNavigate();
   const { speak, stop } = useTTS(true);
   const [helpStep, setHelpStep] = useState<number | null>(null);
@@ -37,7 +37,7 @@ const ModulesPage: React.FC = () => {
     <main className="min-h-screen" style={{ background: "hsl(var(--accent-modules) / 0.06)" }}>
       <AppHeader
         mode="page"
-        title="Modules"
+  title="Rehab Activities"
         centerIcon={<BookOpen />}
         onBack={() => nav("/")}
         onHelp={runHelp}

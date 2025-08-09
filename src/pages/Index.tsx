@@ -9,7 +9,7 @@ import "./index-landing.css";
 
 const HELP_SEQUENCE = [
   { kind: "mod", label: "Modules", desc: "Modules: Daily activities like feeding, writing, and brushing your teeth." },
-  { kind: "ex", label: "Exercises", desc: "Exercises: Practice individual hand and wrist movements." },
+    { kind: "ex", label: "Training Games", desc: "Training Games: Practice individual hand and wrist movements." },
   { kind: "prog", label: "Progress", desc: "Progress: See your achievements and improvements over time." },
 ];
 
@@ -79,14 +79,14 @@ export default function Index() {
       <section className="main-row">
         <SelectableCard
           Icon={BookOpen}
-          label="Modules"
+          label="Rehab Activities"
           colorVar="--accent-modules"
           primed={helpStep === 0}
           onClick={() => nav("/modules")}
         />
         <SelectableCard
           Icon={Dumbbell}
-          label="Exercises"
+          label="Training Games"
           colorVar="--accent-exercises"
           primed={helpStep === 1}
           onClick={() => nav("/exercises")}
