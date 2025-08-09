@@ -53,6 +53,14 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* App section accents (HSL) */
+    --accent-modules: 327 45% 64%;   /* #CC79A7 */
+    --accent-exercises: 202 100% 35%;/* #0072B2 */
+    --accent-progress: 156 100% 31%; /* #009E5F */
+
+    /* Effects */
+    --glow-yellow: 50 100% 80%;
   }
 
   .dark {
@@ -101,5 +109,6 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    overflow: hidden; /* Fit content to one screen, no scroll bar */
   }
 }
