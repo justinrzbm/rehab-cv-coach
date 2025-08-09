@@ -8,6 +8,10 @@ import Index from "@/pages/Index";
 import ModulesPage from "@/pages/Modules";
 import ExercisesPage from "@/pages/Exercises";
 import ProgressPage from "@/pages/Progress";
+import ModuleInfo from "@/pages/ModuleInfo";      // NEW
+import ModuleSetup from "@/pages/ModuleSetup";    // UPDATED (tutorial)
+import ModuleReady from "@/pages/ModuleReady";    // NEW
+import ModuleRun from "@/pages/ModuleRun";        // EXISTING
 import NotFound from "@/pages/NotFound";
 import StarShooter from "./games/StarShooter";
 import FruitNinja from "./games/FruitNinja";  
@@ -24,12 +28,15 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/modules" element={<ModulesPage />} />
+          <Route path="/modules/:slug/info" element={<ModuleInfo />} />
+          <Route path="/modules/:slug/setup" element={<ModuleSetup />} />
+          <Route path="/modules/:slug/ready" element={<ModuleReady />} />
+          <Route path="/modules/:slug/run" element={<ModuleRun />} />
           <Route path="/exercises" element={<ExercisesPage />} />
           <Route path="/exercises/star-shooter" element={<StarShooter />} />
           <Route path="/exercises/flappy-ball" element={<FlappyBall />} />
           <Route path="/exercises/fruit-ninja" element={<FruitNinja />} />
           <Route path="/progress" element={<ProgressPage />} />
-          {/* keep this last */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

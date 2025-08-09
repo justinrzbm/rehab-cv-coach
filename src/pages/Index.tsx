@@ -33,7 +33,7 @@ export default function Index() {
         await new Promise((res) => setTimeout(res, 2200));
       }
       setHelpStep(null);
-      setShowGreeting(true);
+      setShowGreeting(true); // Show greeting after help sequence
     };
     runHelp();
     return () => { mounted = false; stop(); };
