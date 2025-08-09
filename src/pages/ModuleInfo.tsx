@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { BookOpen } from "lucide-react";
+import { BookOpen, RotateCcw, Pause } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useSEO } from "@/hooks/useSEO";
-import { RotateCcw, Pause } from "lucide-react"; // replay + pause icons
 
 // Module metadata
 const META: Record<string, { title: string; blurb: string; video: string }> = {
@@ -27,20 +26,17 @@ const ModuleInfo: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showNext, setShowNext] = useState(false);
 
-  // Mute all audio from previous pages
+  // Ensure muted (avoid stray audio from prior pages)
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-    }
+    if (videoRef.current) videoRef.current.muted = true;
   }, []);
 
-
-  // Reveal Next after 2s of playback time
+  // Reveal Next after 2s of actual playback
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid) return;
     const onTime = () => {
-      if (vid.currentTime >= 2 && !showNext) setShowNext(true);
+      if (!showNext && vid.currentTime >= 2) setShowNext(true);
     };
     vid.addEventListener("timeupdate", onTime);
     return () => vid.removeEventListener("timeupdate", onTime);
@@ -49,12 +45,8 @@ const ModuleInfo: React.FC = () => {
   const togglePlay = () => {
     const vid = videoRef.current;
     if (!vid) return;
-
-    if (isPlaying) {
-      vid.pause();
-    } else {
-      vid.play();
-    }
+    if (isPlaying) vid.pause();
+    else vid.play();
   };
 
   return (
@@ -71,10 +63,17 @@ const ModuleInfo: React.FC = () => {
         accentVar="--accent-modules"
       />
 
-      <section className="flex-grow container mx-auto p-4 flex flex-col justify-center items-center space-y-6">
+      <section className="flex-grow container mx-auto p-4 flex flex-col items-center gap-6">
         <p className="text-lg leading-relaxed max-w-3xl text-center">{m.blurb}</p>
 
-        <div className="relative w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden flex items-center justify-center">
+        {/* Video wrapper: responsive height so Next button stays in view */}
+        <div
+          className="
+            relative w-full max-w-5xl rounded-2xl overflow-hidden bg-black
+            flex items-center justify-center
+            h-[62dvh] md:h-[58dvh] sm:h-[52dvh]
+          "
+        >
           <video
             ref={videoRef}
             key={m.video}
@@ -87,10 +86,11 @@ const ModuleInfo: React.FC = () => {
             onPause={() => setIsPlaying(false)}
           />
 
-          {/* Overlay play/replay control */}
+          {/* Overlay control */}
           <button
             onClick={togglePlay}
             className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition"
+            aria-label={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
               <Pause size={64} className="text-white drop-shadow-lg" />
@@ -100,9 +100,9 @@ const ModuleInfo: React.FC = () => {
           </button>
         </div>
 
-        {/* Next button at bottom */}
+        {/* Next button — visible without scrolling thanks to the reserved height above */}
         {showNext && (
-          <div className="flex justify-center w-full pt-4">
+          <div className="flex justify-center w-full pt-1">
             <Button size="lg" onClick={() => nav(`/modules/${slug}/setup`)}>
               Next
             </Button>
