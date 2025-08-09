@@ -9,6 +9,9 @@ import ModulesPage from "@/pages/Modules";
 import ExercisesPage from "@/pages/Exercises";
 import ProgressPage from "@/pages/Progress";
 import NotFound from "@/pages/NotFound";
+import StarShooter from "./games/StarShooter";
+import FruitNinja from "./games/FruitNinja";  
+import FlappyBall from "./games/FlappyBall";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +25,9 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/modules" element={<ModulesPage />} />
           <Route path="/exercises" element={<ExercisesPage />} />
+          <Route path="/exercises/star-shooter" element={<StarShooter />} />
+          <Route path="/exercises/flappy-ball" element={<FlappyBall />} />
+          <Route path="/exercises/fruit-ninja" element={<FruitNinja />} />
           <Route path="/progress" element={<ProgressPage />} />
           {/* keep this last */}
           <Route path="*" element={<NotFound />} />

@@ -3,17 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { Hands } from "@mediapipe/hands";
 import { Camera } from "@mediapipe/camera_utils";
 
+// Canvas dimensions
 const CANVAS_WIDTH = 640;
 const CANVAS_HEIGHT = 480;
 
+// Column type for type safety
 type Column = {
   x: number;
   width: number;
   gapY: number;
   gapHeight: number;
+  scored: boolean;
 };
 
-function createColumn(): Column {
+// Helper function to create a new column
+const createColumn = (): Column => {
   const gapHeight = 140;
   const gapY = Math.random() * (CANVAS_HEIGHT - gapHeight - 40) + 20;
   return {
@@ -21,33 +25,63 @@ function createColumn(): Column {
     width: 60,
     gapY,
     gapHeight,
+    scored: false,
   };
-}
+};
 
 const FlappyBall: React.FC = () => {
   const navigate = useNavigate();
+  
+  // Use useRef for DOM elements and game state that should not trigger re-renders
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const handsRef = useRef<Hands | null>(null);
+  const cameraRef = useRef<Camera | null>(null);
+  
+  const columnsRef = useRef<Column[]>([createColumn()]);
+  const gameOverRef = useRef(false);
+  const scoreRef = useRef(0);
+  const ballYRef = useRef(CANVAS_HEIGHT / 2);
 
-  const [score, setScore] = useState(0);
-  const [columns, setColumns] = useState<Column[]>([createColumn()]);
-  const [ballY, setBallY] = useState(CANVAS_HEIGHT / 2);
+  // Use useState only for UI elements that need to trigger re-renders
+  const [displayScore, setDisplayScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
 
-  useEffect(() => {
-    let camera: Camera | null = null;
-    let hands: Hands | null = null;
+  const handleRestart = () => {
+    // Reset all state variables and the columns ref
+    setDisplayScore(0);
+    scoreRef.current = 0;
+    ballYRef.current = CANVAS_HEIGHT / 2;
+    gameOverRef.current = false;
+    setGameOver(false);
+    columnsRef.current = [createColumn()];
+  };
 
+  const handleBack = () => {
+    if (cameraRef.current) {
+      cameraRef.current.stop();
+    }
+    if (handsRef.current) {
+      handsRef.current.close();
+    }
+    navigate("/exercises");
+  };
+  
+  useEffect(() => {
     const videoElement = videoRef.current;
     const canvasElement = canvasRef.current;
     const ctx = canvasElement?.getContext("2d");
 
-    if (!videoElement || !canvasElement || !ctx) return;
+    if (!videoElement || !canvasElement || !ctx) {
+      console.error("Video or Canvas elements not found.");
+      return;
+    }
 
-    hands = new Hands({
-      locateFile: (file) =>
-        `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
     });
+    handsRef.current = hands;
+
     hands.setOptions({
       maxNumHands: 1,
       modelComplexity: 0,
@@ -56,135 +90,153 @@ const FlappyBall: React.FC = () => {
     });
 
     hands.onResults((results) => {
+      if (gameOverRef.current) return;
+
+      // Clear the canvas and draw the video frame
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       ctx.drawImage(results.image, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      // Ball position from hand
-      let fingerY = ballY;
-      if (
-        results.multiHandLandmarks &&
-        results.multiHandLandmarks.length > 0
-      ) {
+      // Update ball position from hand landmarks
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const indexTip = results.multiHandLandmarks[0][8];
-        fingerY = indexTip.y * CANVAS_HEIGHT;
-        setBallY(fingerY);
-
-        ctx.beginPath();
-        ctx.arc(80, fingerY, 18, 0, 2 * Math.PI);
-        ctx.fillStyle = "#00ff00";
-        ctx.fill();
+        ballYRef.current = indexTip.y * CANVAS_HEIGHT;
       }
 
-      // Move columns
-      setColumns((prevCols) => {
-        let newCols = prevCols.map((col) => ({
-          ...col,
-          x: col.x - 3,
-        }));
+      // Update and draw columns
+      let newColumns = columnsRef.current.map((col) => ({
+        ...col,
+        x: col.x - 3, // Move columns to the left
+      }));
 
-        // Remove off-screen columns and add new ones
-        if (newCols.length === 0 || newCols[newCols.length - 1].x < CANVAS_WIDTH - 220) {
-          newCols.push(createColumn());
+      // Add a new column if the last one is far enough
+      if (newColumns.length === 0 || newColumns[newColumns.length - 1].x < CANVAS_WIDTH - 220) {
+        newColumns.push(createColumn());
+      }
+      
+      // Remove columns that are off-screen
+      newColumns = newColumns.filter((col) => col.x + col.width > 0);
+      columnsRef.current = newColumns;
+      
+      // Draw the columns and check for scoring
+      newColumns.forEach((col) => {
+        ctx.fillStyle = "#4caf50";
+        ctx.strokeStyle = "#2e7d32";
+        ctx.lineWidth = 3;
+
+        // Top pipe
+        ctx.fillRect(col.x, 0, col.width, col.gapY);
+        ctx.strokeRect(col.x, 0, col.width, col.gapY);
+        
+        // Bottom pipe
+        ctx.fillRect(col.x, col.gapY + col.gapHeight, col.width, CANVAS_HEIGHT - (col.gapY + col.gapHeight));
+        ctx.strokeRect(col.x, col.gapY + col.gapHeight, col.width, CANVAS_HEIGHT - (col.gapY + col.gapHeight));
+
+        // Check for scoring
+        if (!col.scored && col.x + col.width < 80 - 18) {
+          col.scored = true; // Mark as scored
+          scoreRef.current += 1;
+          setDisplayScore(scoreRef.current);
         }
-        newCols = newCols.filter((col) => col.x + col.width > 0);
-
-        // Draw columns
-        newCols.forEach((col) => {
-          ctx.fillStyle = "#4caf50";
-          // Top
-          ctx.fillRect(col.x, 0, col.width, col.gapY);
-          // Bottom
-          ctx.fillRect(col.x, col.gapY + col.gapHeight, col.width, CANVAS_HEIGHT - (col.gapY + col.gapHeight));
-          ctx.strokeStyle = "#fff";
-          ctx.lineWidth = 3;
-          ctx.strokeRect(col.x, 0, col.width, col.gapY);
-          ctx.strokeRect(col.x, col.gapY + col.gapHeight, col.width, CANVAS_HEIGHT - (col.gapY + col.gapHeight));
-        });
-
-        // Collision detection
-        let collision = false;
-        newCols.forEach((col) => {
-          if (
-            col.x < 80 + 18 &&
-            col.x + col.width > 80 - 18
-          ) {
-            if (
-              fingerY - 18 < col.gapY ||
-              fingerY + 18 > col.gapY + col.gapHeight
-            ) {
-              collision = true;
-            }
-          }
-        });
-
-        if (collision && !gameOver) {
-          setGameOver(true);
-        }
-
-        // Score
-        newCols.forEach((col) => {
-          if (!gameOver && col.x + col.width < 80 - 18 && !("scored" in col)) {
-            setScore((s) => s + 1);
-            (col as any).scored = true;
-          }
-        });
-
-        return newCols;
       });
 
-      // Draw ball
+      // Collision detection
+      let collision = false;
+      for (const col of newColumns) {
+        if (80 + 18 > col.x && 80 - 18 < col.x + col.width) {
+          if (ballYRef.current - 18 < col.gapY || ballYRef.current + 18 > col.gapY + col.gapHeight) {
+            collision = true;
+            break;
+          }
+        }
+      }
+
+      if (collision) {
+        gameOverRef.current = true;
+        setGameOver(true);
+      }
+      
+      // Draw the ball
       ctx.beginPath();
-      ctx.arc(80, fingerY, 18, 0, 2 * Math.PI);
-      ctx.fillStyle = "#ff5252";
+      ctx.arc(80, ballYRef.current, 18, 0, 2 * Math.PI);
+      ctx.fillStyle = "#f44336";
       ctx.fill();
       ctx.strokeStyle = "#fff";
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // Draw score
-      ctx.font = "32px Arial";
-      ctx.fillStyle = "#fff";
-      ctx.fillText(`Score: ${score}`, 20, 40);
-
-      // Game over
-      if (gameOver) {
-        ctx.font = "48px Arial";
-        ctx.fillStyle = "#f44336";
-        ctx.fillText("GAME OVER!", CANVAS_WIDTH / 2 - 140, CANVAS_HEIGHT / 2);
-      }
+      // Draw the score text
+      ctx.font = "32px Inter, sans-serif";
+      ctx.fillStyle = "#333";
+      ctx.fillText(`Score: ${scoreRef.current}`, 20, 40);
     });
 
-    camera = new Camera(videoElement, {
+    const camera = new Camera(videoElement, {
       onFrame: async () => {
-        await hands!.send({ image: videoElement });
+        await hands.send({ image: videoElement });
       },
       width: CANVAS_WIDTH,
       height: CANVAS_HEIGHT,
     });
+    cameraRef.current = camera;
     camera.start();
 
+    // Cleanup function for useEffect
     return () => {
-      camera?.stop();
-      hands?.close();
+      camera.stop();
+      hands.close();
     };
-  }, [score, ballY, gameOver]);
-
-  const handleRestart = () => {
-    setScore(0);
-    setColumns([createColumn()]);
-    setBallY(CANVAS_HEIGHT / 2);
-    setGameOver(false);
-  };
+  }, []); // Empty dependency array ensures this effect runs only once
 
   return (
-    <main className="game-root">
-      <h1>🏐 Flappy Ball</h1>
-      <video ref={videoRef} style={{ display: "none" }} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
-      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} style={{ border: "2px solid #333" }} />
-      <div style={{ marginTop: 16 }}>
-        <button onClick={() => navigate("/")}>Back</button>
-        <button onClick={handleRestart} style={{ marginLeft: 16 }}>Restart</button>
-        <span style={{ marginLeft: 24, fontSize: 24 }}>Score: {score}</span>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-800 p-4 font-sans">
+      <script src="https://cdn.tailwindcss.com"></script>
+      <div className="p-8 bg-white rounded-xl shadow-lg border-2 border-gray-300 relative">
+        <h1 className="text-4xl md:text-5xl font-bold text-center mb-6">
+          <span role="img" aria-label="volleyball">🏐</span> Flappy Ball
+        </h1>
+        <p className="text-lg text-center text-gray-600 max-w-lg mb-6">
+          Use your index finger to guide the ball through the gaps!
+        </p>
+        <div className="relative">
+          <video ref={videoRef} className="hidden" width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            className="rounded-lg shadow-inner border-4 border-gray-400"
+          />
+          {gameOver && (
+            <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center rounded-lg">
+              <p className="text-5xl md:text-7xl font-extrabold text-red-500 mb-4 animate-bounce">GAME OVER</p>
+              <p className="text-3xl font-semibold mb-6 text-white">Final Score: {displayScore}</p>
+              <button
+                onClick={handleRestart}
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+              >
+                Restart Game
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="absolute top-4 left-4 flex flex-col gap-2">
+            <button
+                onClick={handleBack}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out"
+            >
+                Back
+            </button>
+            <button
+                onClick={handleRestart}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out"
+            >
+                Restart
+            </button>
+        </div>
       </div>
-    </main>
+    </div>
   );
+};
+
+export default FlappyBall;

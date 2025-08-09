@@ -33,6 +33,18 @@ const ExercisesPage: React.FC = () => {
         </div>
 
         <div className="md:col-span-3 flex justify-end">
+          <Button onClick={() => nav("/exercises/fruit-ninja")} style={{ marginLeft: 12 }}>
+            Play Fruit Ninja
+          </Button>
+          <Button onClick={() => nav("/exercises/star-shooter")} style={{ marginLeft: 12 }}>
+            Play Star Shooter
+          </Button>
+          <Button onClick={() => nav("/exercises/flappy-ball")} style={{ marginLeft: 12 }}>
+            Play Flappy Ball
+          </Button>
+        </div>
+
+        <div className="md:col-span-3 flex justify-end">
           <Button onClick={() => nav(`/exercises/${selected}/info`)}>Details</Button>
         </div>
       </section>

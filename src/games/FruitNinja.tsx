@@ -1,16 +1,13 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-
-// You need to install @mediapipe/hands and @mediapipe/camera_utils
-// npm install @mediapipe/hands @mediapipe/camera_utils
-
 import { Hands } from "@mediapipe/hands";
 import { Camera } from "@mediapipe/camera_utils";
 
-const CANVAS_WIDTH = 640;
-const CANVAS_HEIGHT = 480;
+const CANVAS_WIDTH = 1000;
+const CANVAS_HEIGHT = 550;
 
 type Fruit = {
+  id: string;
   x: number;
   y: number;
   vx: number;
@@ -21,6 +18,7 @@ type Fruit = {
 
 function createFruit(): Fruit {
   return {
+    id: Math.random().toString(36).substr(2, 9),
     x: Math.random() * (CANVAS_WIDTH - 80) + 40,
     y: CANVAS_HEIGHT - 40,
     vx: (Math.random() - 0.5) * 4,
@@ -35,118 +33,187 @@ const FruitNinja: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [score, setScore] = useState(0);
-  const [fruits, setFruits] = useState<Fruit[]>([createFruit()]);
-  const [handPos, setHandPos] = useState<{ x: number; y: number } | null>(null);
+  const scoreRef = useRef(0);
+  const fruitsRef = useRef<Fruit[]>([createFruit()]);
+  const [displayedScore, setDisplayedScore] = useState(0);
+
+  const handsRef = useRef<Hands | null>(null);
+  const cameraRef = useRef<Camera | null>(null);
+
+  const updateScore = useCallback(() => {
+    setDisplayedScore(scoreRef.current);
+  }, []);
+
+  const handleRestart = () => {
+    scoreRef.current = 0;
+    setDisplayedScore(0);
+    fruitsRef.current = [createFruit()];
+    window.location.reload();
+  };
+
+  const handleBack = () => {
+    cameraRef.current?.stop();
+    handsRef.current?.close();
+    navigate("/exercises");
+  };
 
   useEffect(() => {
-    let camera: Camera | null = null;
-    let hands: Hands | null = null;
-    let animationFrameId: number;
-
     const videoElement = videoRef.current;
     const canvasElement = canvasRef.current;
     const ctx = canvasElement?.getContext("2d");
 
-    if (!videoElement || !canvasElement || !ctx) return;
+    if (!videoElement || !canvasElement || !ctx) {
+      return;
+    }
 
-    hands = new Hands({
+    handsRef.current = new Hands({
       locateFile: (file) =>
         `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
     });
-    hands.setOptions({
+    handsRef.current.setOptions({
       maxNumHands: 1,
       modelComplexity: 0,
       minDetectionConfidence: 0.6,
       minTrackingConfidence: 0.4,
     });
 
-    hands.onResults((results) => {
+    handsRef.current.onResults((results) => {
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-      // Draw video
       ctx.drawImage(results.image, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      // Draw fruits
-      setFruits((prevFruits) => {
-        const newFruits = prevFruits.map((fruit) => {
-          if (!fruit.sliced) {
-            fruit.x += fruit.vx;
-            fruit.y += fruit.vy;
-            fruit.vy += 0.2;
-            // Draw fruit
-            ctx.beginPath();
-            ctx.arc(fruit.x, fruit.y, fruit.radius, 0, 2 * Math.PI);
-            ctx.fillStyle = "#ff9800";
-            ctx.fill();
-            ctx.strokeStyle = "#fff";
-            ctx.lineWidth = 3;
-            ctx.stroke();
-          }
-          return fruit;
-        }).filter(fruit => fruit.y < CANVAS_HEIGHT + 40 && !fruit.sliced);
+      const fruits = fruitsRef.current;
 
-        // Draw hand and check slicing
-        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-          const indexTip = results.multiHandLandmarks[0][8];
-          const handX = indexTip.x * CANVAS_WIDTH;
-          const handY = indexTip.y * CANVAS_HEIGHT;
-          setHandPos({ x: handX, y: handY });
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const indexTip = results.multiHandLandmarks[0][8];
+        const handX = indexTip.x * CANVAS_WIDTH;
+        const handY = indexTip.y * CANVAS_HEIGHT;
+
+        ctx.beginPath();
+        ctx.arc(handX, handY, 15, 0, 2 * Math.PI);
+        ctx.fillStyle = "#00ff00";
+        ctx.fill();
+
+        for (const fruit of fruits) {
+          if (!fruit.sliced) {
+            const dist = Math.hypot(fruit.x - handX, fruit.y - handY);
+            if (dist < fruit.radius + 20) {
+              fruit.sliced = true;
+              scoreRef.current += 10;
+              updateScore();
+            }
+          }
+        }
+      }
+
+      const nextFruits: Fruit[] = [];
+      for (const fruit of fruits) {
+        if (!fruit.sliced) {
+          fruit.x += fruit.vx;
+          fruit.y += fruit.vy;
+          fruit.vy += 0.2;
 
           ctx.beginPath();
-          ctx.arc(handX, handY, 15, 0, 2 * Math.PI);
-          ctx.fillStyle = "#00ff00";
+          ctx.arc(fruit.x, fruit.y, fruit.radius, 0, 2 * Math.PI);
+          ctx.fillStyle = "#ff9800";
           ctx.fill();
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 3;
+          ctx.stroke();
 
-          // Check for slicing
-          newFruits.forEach((fruit) => {
-            const dist = Math.hypot(fruit.x - handX, fruit.y - handY);
-            if (dist < fruit.radius + 20 && !fruit.sliced) {
-              fruit.sliced = true;
-              setScore((s) => s + 10);
-            }
-          });
+          if (fruit.y < CANVAS_HEIGHT + 40) {
+            nextFruits.push(fruit);
+          }
         }
+      }
 
-        // Spawn new fruit occasionally
-        if (Math.random() < 0.02) {
-          newFruits.push(createFruit());
-        }
+      if (Math.random() < 0.02) {
+        nextFruits.push(createFruit());
+      }
+      fruitsRef.current = nextFruits;
 
-        return newFruits;
-      });
-
-      // Draw score
-      ctx.font = "32px Arial";
-      ctx.fillStyle = "#fff";
-      ctx.fillText(`Score: ${score}`, 20, 40);
+      // Score display is now handled in the UI, not canvas
     });
 
-    camera = new Camera(videoElement, {
+    cameraRef.current = new Camera(videoElement, {
       onFrame: async () => {
-        await hands!.send({ image: videoElement });
+        if (handsRef.current) {
+          await handsRef.current.send({ image: videoElement });
+        }
       },
       width: CANVAS_WIDTH,
       height: CANVAS_HEIGHT,
     });
-    camera.start();
+    cameraRef.current.start();
 
     return () => {
-      camera?.stop();
-      hands?.close();
-      cancelAnimationFrame(animationFrameId);
+      cameraRef.current?.stop();
+      handsRef.current?.close();
     };
-  }, [score]);
+  }, [updateScore]);
 
+  // ...existing code...
   return (
-    <main className="game-root">
-      <h1>🥷 Fruit Ninja</h1>
-      <video ref={videoRef} style={{ display: "none" }} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
-      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} style={{ border: "2px solid #333" }} />
-      <div style={{ marginTop: 16 }}>
-        <button onClick={() => navigate("/")}>Back</button>
-        <span style={{ marginLeft: 24, fontSize: 24 }}>Score: {score}</span>
+    <main
+      className="min-h-screen flex flex-col items-center justify-center"
+      style={{ background: "hsl(var(--accent-exercises) / 0.06)" }}
+    >
+      {/* Top-left buttons */}
+      <div
+        style={{
+          position: "fixed",
+          top: 24,
+          left: 24,
+          zIndex: 10,
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+        }}
+      >
+        <button
+          onClick={handleBack}
+          className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold shadow"
+        >
+          ← Back
+        </button>
+        <button
+          onClick={handleRestart}
+          className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow"
+        >
+          Restart
+        </button>
       </div>
+
+      {/* Title and score */}
+      <header className="w-full flex items-center justify-center px-8 py-4">
+        <div className="text-2xl font-bold text-orange-600">
+          Fruit Ninja 🥷
+        </div>
+        <div className="absolute right-8 text-xl font-bold text-gray-800 bg-white px-4 py-2 rounded-lg shadow">
+          Score: {displayedScore}
+        </div>
+      </header>
+
+      <section className="flex flex-col items-center justify-center gap-6 w-full">
+        <div className="rounded-xl overflow-hidden bg-card aspect-video flex items-center justify-center">
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            className="rounded-lg shadow-lg border border-gray-300"
+            style={{ transform: "scaleX(-1)" }} // <-- Add this line
+          />
+          <video
+            ref={videoRef}
+            style={{ display: "none", transform: "scaleX(-1)" }} // <-- Add this line
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            playsInline
+          />
+        </div>
+      </section>
+      <footer className="mt-8 text-sm text-gray-500 text-center">
+        Powered by Mediapipe Hands
+      </footer>
     </main>
   );
 };
