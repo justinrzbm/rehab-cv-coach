@@ -12,9 +12,10 @@ import ModuleInfo from "@/pages/ModuleInfo";      // NEW
 import ModuleSetup from "@/pages/ModuleSetup";    // UPDATED (tutorial)
 import ModuleRun from "@/pages/ModuleRun";        // EXISTING
 import NotFound from "@/pages/NotFound";
-import StarShooter from "./games/StarShooter";
-import FruitNinja from "./games/FruitNinja";  
-import FlappyBall from "./games/FlappyBall";
+
+import StarShooter from "@/pages/StarShooter"
+import FruitNinja from "@/pages/FruitNinja";
+import FlappyBall from "@/pages/FlappyBall";
 
 const queryClient = new QueryClient();
 
@@ -31,9 +32,9 @@ const App = () => (
           <Route path="/modules/:slug/setup" element={<ModuleSetup />} />
           <Route path="/modules/:slug/run" element={<ModuleRun />} />
           <Route path="/exercises" element={<ExercisesPage />} />
-          <Route path="/exercises/star-shooter" element={<StarShooter />} />
-          <Route path="/exercises/flappy-ball" element={<FlappyBall />} />
-          <Route path="/exercises/fruit-ninja" element={<FruitNinja />} />
+          <Route path="/exercises/FlappyBall" element={<FlappyBall />} />
+          <Route path="/exercises/FruitNinja" element={<FruitNinja />} />
+          <Route path="/exercises/StarShooter" element={<StarShooter />} />
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

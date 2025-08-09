@@ -8,31 +8,30 @@ import { useSEO } from "@/hooks/useSEO";
 import { useTTS } from "@/components/tts/useTTS";
 import { SelectableCard } from "@/components/common/SelectableCard";
 
-const exercises = [
-  { key: "wrist-flexion", title: "Wrist Flexion", img: "/placeholder.svg" },
-  { key: "wrist-extension", title: "Wrist Extension", img: "/placeholder.svg" },
-  { key: "finger-tap", title: "Finger Tap", img: "/placeholder.svg" },
+
+const EXERCISES = [
+  { key: "fruitninja", label: "Fruit Ninja", Icon: Dumbbell, desc: "Fruit Ninja: Slice the fruit by moving your hand quickly." },
+  { key: "starshooter", label: "Star Shooter", Icon: Dumbbell, desc: "Star Shooter: Point and shoot at the stars to score points." },
+  { key: "flappyball", label: "Flappy Ball", Icon: Dumbbell, desc: "Flappy Ball: Move your hand up and down to keep the ball in the air." },
 ];
 
-const HELP_SEQUENCE = [
-  { key: "wrist-flexion", label: "Wrist Flexion", desc: "Wrist Flexion: Move your wrist up and down." },
-  { key: "wrist-extension", label: "Wrist Extension", desc: "Wrist Extension: Move your wrist backward." },
-  { key: "finger-tap", label: "Finger Tap", desc: "Finger Tap: Tap your fingers one at a time." },
-];
+
 
 const ExercisesPage: React.FC = () => {
   useSEO("Rehab Coach – Training Games", "Pick a single exercise to practice with tracking and voice.");
   const nav = useNavigate();
   const { speak, stop } = useTTS(true);
+
   const [selected, setSelected] = useState<string | null>(null);
   const [helpStep, setHelpStep] = useState<number | null>(null);
 
   // Help sequence logic
+
   const runHelp = async () => {
-    for (let i = 0; i < HELP_SEQUENCE.length; ++i) {
+    for (let i = 0; i < EXERCISES.length; ++i) {
       setHelpStep(i);
       stop();
-      speak(HELP_SEQUENCE[i].desc);
+      speak(EXERCISES[i].desc);
       await new Promise((res) => setTimeout(res, 2200));
     }
     setHelpStep(null);
@@ -51,34 +50,23 @@ const ExercisesPage: React.FC = () => {
         {/* Help description text */}
         {helpStep !== null && (
           <div style={{ minHeight: 48, marginBottom: 32, textAlign: "center", fontSize: 24, fontWeight: 600, color: "#222", zIndex: 10 }}>
-            {HELP_SEQUENCE[helpStep].desc}
+            {EXERCISES[helpStep].desc}
           </div>
         )}
         {helpStep === null && <div style={{ minHeight: 48, marginBottom: 32 }} />}
         <div className="flex items-center justify-center gap-6 md:gap-10">
-          {exercises.map((e, i) => (
+          {EXERCISES.map((ex, i) => (
             <SelectableCard
-              key={e.key}
-              Icon={Dumbbell}
-              label={e.title}
+              key={ex.key}
+              Icon={ex.Icon}
+              label={ex.label}
               colorVar="--accent-exercises"
               primed={helpStep === i}
-              onClick={() => setSelected(e.key)}
+              onClick={() => nav(`/exercises/${ex.key}`)}
             />
           ))}
         </div>
-        {selected && (
-          <div className="flex justify-end mt-6">
-            <Button onClick={() => nav(`/exercises/${selected}/info`)}>Details</Button>
-          </div>
-        )}
-        {selected && (
-          <div className="w-full flex justify-center mt-10">
-            <div className="rounded-xl overflow-hidden bg-card aspect-video flex items-center justify-center max-w-2xl w-full">
-              <img src={exercises.find((e) => e.key === selected)!.img} alt={`${selected} guide`} className="w-full h-full object-contain" loading="lazy" />
-            </div>
-          </div>
-        )}
+  {/* No details or preview for new exercise navigation */}
         <style>{`
           .SelectableCard-primed {
             box-shadow: 0 0 32px 8px #fffbe6, 0 0 0 8px #ffe066;
