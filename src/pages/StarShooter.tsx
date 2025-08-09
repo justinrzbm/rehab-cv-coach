@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { Dumbbell } from "lucide-react";
 import { Hands } from "@mediapipe/hands";
 import { Camera } from "@mediapipe/camera_utils";
 
@@ -57,26 +59,30 @@ const StarShooter: React.FC = () => {
     gameRef.current.hands?.close();
     gameRef.current.isGameRunning = false;
   };
-  
-  const handleRestart = () => {
-    stopGame();
-    gameRef.current = {
-      ...gameRef.current,
-      score: 0,
-      star: createStar(),
-      bullets: [],
-      playerX: CANVAS_WIDTH / 2,
-      lastShot: Date.now(),
-      isGameRunning: true,
-    };
-    setScore(0);
-    window.location.reload(); 
-  };
-  
   const handleBack = () => {
     stopGame();
     navigate("/exercises");
   };
+  
+  // const handleRestart = () => {
+  //   stopGame();
+  //   gameRef.current = {
+  //     ...gameRef.current,
+  //     score: 0,
+  //     star: createStar(),
+  //     bullets: [],
+  //     playerX: CANVAS_WIDTH / 2,
+  //     lastShot: Date.now(),
+  //     isGameRunning: true,
+  //   };
+  //   setScore(0);
+  //   window.location.reload(); 
+  // };
+
+  // const handleBack = () => {
+  //   stopGame();
+  //   navigate("/exercises");
+  // };
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -213,44 +219,21 @@ const StarShooter: React.FC = () => {
   }, []);
 
   return (
-    <main className="game-root" style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: '0.25',
-      backgroundColor: '#f5f5f5', // Light gray background for contrast
-      position: 'relative', // Added for absolute positioning of buttons
-    }}>
-      <h1 style={{ fontSize: '1.5rem', color: '#333' }}>⭐ Star Shooter</h1>
-      <p style={{ fontSize: '1.5rem', color: '#666', maxWidth: '800px', textAlign: 'center' }}>
-        Use your hand to control the green circle and shoot the yellow stars!
-      </p>
-      <video ref={videoRef} style={{ display: "none" }} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
-      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} style={{ border: "4px solid #333" }} />
-      {/* CHANGED: Moved and styled buttons for top-left position */}
-      <div style={{ position: 'absolute', top: '2rem', left: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <button 
-          onClick={handleBack} 
-          style={{ padding: '0.5rem 1rem', fontSize: '1rem', backgroundColor: '#F44336', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '8px' }}
-        >
-          Back
-        </button>
-        <button 
-          onClick={handleRestart} 
-          style={{ padding: '0.5rem 1rem', fontSize: '1rem', backgroundColor: '#2196F3', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '8px' }}
-        >
-          Restart
-        </button>
-        <button 
-          onClick={stopGame} 
-          style={{ padding: '0.5rem 1rem', fontSize: '1rem', backgroundColor: '#FF9800', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '8px' }}
-        >
-          Stop Game
-        </button>
+    <main className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-gray-800 p-4 font-sans">
+      <AppHeader
+        mode="page"
+        title="Star Shooter"
+        centerIcon={<Dumbbell />}
+        onBack={handleBack}
+        accentVar="--accent-exercises"
+      />
+      <div className="w-full flex flex-col items-center mt-2">
+        <div className="text-2xl font-bold text-orange-600 mb-2">Score: {score}</div>
+        <div className="relative">
+          <video ref={videoRef} style={{ display: "none" }} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
+          <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} style={{ border: "4px solid #333" }} />
+        </div>
       </div>
-      <span style={{ marginTop: '2rem', fontSize: '2.5rem', fontWeight: 'bold', color: '#333' }}>
-        Score: {score}
-      </span>
     </main>
   );
 };
