@@ -225,8 +225,8 @@ const StarShooter: React.FC = () => {
       <p style={{ fontSize: '1.5rem', color: '#666', maxWidth: '800px', textAlign: 'center' }}>
         Use your hand to control the green circle and shoot the yellow stars!
       </p>
-      <video ref={videoRef} style={{ display: "none" }} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
-      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} style={{ border: "4px solid #333" }} />
+      <video ref={videoRef} style={{ display: "none",transform: "scaleX(-1)" }} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
+      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} style={{ border: "4px solid #333", transform: "scaleX(-1)" }} />
       {/* CHANGED: Moved and styled buttons for top-left position */}
       <div style={{ position: 'absolute', top: '2rem', left: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <button 
