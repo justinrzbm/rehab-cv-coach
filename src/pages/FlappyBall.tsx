@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { Dumbbell } from "lucide-react";
 import { Hands } from "@mediapipe/hands";
 import { Camera } from "@mediapipe/camera_utils";
 
@@ -47,23 +49,11 @@ const FlappyBall: React.FC = () => {
   const [displayScore, setDisplayScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
 
-  const handleRestart = () => {
-    // Reset all state variables and the columns ref
-    setDisplayScore(0);
-    scoreRef.current = 0;
-    ballYRef.current = CANVAS_HEIGHT / 2;
-    gameOverRef.current = false;
-    setGameOver(false);
-    columnsRef.current = [createColumn()];
-  };
+  // Remove restart button for unified UI
 
   const handleBack = () => {
-    if (cameraRef.current) {
-      cameraRef.current.stop();
-    }
-    if (handsRef.current) {
-      handsRef.current.close();
-    }
+    cameraRef.current?.stop();
+    handsRef.current?.close();
     navigate("/exercises");
   };
   
@@ -190,15 +180,16 @@ const FlappyBall: React.FC = () => {
   }, []); // Empty dependency array ensures this effect runs only once
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-800 p-4 font-sans">
-      <script src="https://cdn.tailwindcss.com"></script>
-      <div className="p-8 bg-white rounded-xl shadow-lg border-2 border-gray-300 relative">
-        <h1 className="text-4xl md:text-5xl font-bold text-center mb-6">
-          <span role="img" aria-label="volleyball">🏐</span> Flappy Ball
-        </h1>
-        <p className="text-lg text-center text-gray-600 max-w-lg mb-6">
-          Use your index finger to guide the ball through the gaps!
-        </p>
+    <main className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-gray-800 p-4 font-sans">
+      <AppHeader
+        mode="page"
+        title="Flappy Ball"
+        centerIcon={<Dumbbell />}
+        onBack={handleBack}
+        accentVar="--accent-exercises"
+      />
+      <div className="w-full flex flex-col items-center mt-2">
+        <div className="text-2xl font-bold text-orange-600 mb-2">Score: {displayScore}</div>
         <div className="relative">
           <video ref={videoRef} className="hidden" width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
           <canvas
@@ -211,31 +202,11 @@ const FlappyBall: React.FC = () => {
             <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center rounded-lg">
               <p className="text-5xl md:text-7xl font-extrabold text-red-500 mb-4 animate-bounce">GAME OVER</p>
               <p className="text-3xl font-semibold mb-6 text-white">Final Score: {displayScore}</p>
-              <button
-                onClick={handleRestart}
-                className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
-              >
-                Restart Game
-              </button>
             </div>
           )}
         </div>
-        <div className="absolute top-4 left-4 flex flex-col gap-2">
-            <button
-                onClick={handleBack}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out"
-            >
-                Back
-            </button>
-            <button
-                onClick={handleRestart}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out"
-            >
-                Restart
-            </button>
-        </div>
       </div>
-    </div>
+    </main>
   );
 };
 

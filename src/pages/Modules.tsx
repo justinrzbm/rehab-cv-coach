@@ -37,7 +37,7 @@ const ModulesPage: React.FC = () => {
     <main className="min-h-screen" style={{ background: "hsl(var(--accent-modules) / 0.06)" }}>
       <AppHeader
         mode="page"
-  title="Rehab Activities"
+        title="Rehab Activities"
         centerIcon={<BookOpen />}
         onBack={() => nav("/")}
         onHelp={runHelp}
