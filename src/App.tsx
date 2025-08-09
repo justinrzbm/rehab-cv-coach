@@ -14,6 +14,10 @@ import ModuleReady from "@/pages/ModuleReady";    // NEW
 import ModuleRun from "@/pages/ModuleRun";        // EXISTING
 import NotFound from "@/pages/NotFound";
 
+import StarShooter from "@/pages/StarShooter"
+import FruitNinja from "@/pages/FruitNinja";
+import FlappyBall from "@/pages/FlappyBall";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -30,6 +34,9 @@ const App = () => (
           <Route path="/modules/:slug/ready" element={<ModuleReady />} />
           <Route path="/modules/:slug/run" element={<ModuleRun />} />
           <Route path="/exercises" element={<ExercisesPage />} />
+          <Route path="/exercises/FlappyBall" element={<FlappyBall />} />
+          <Route path="/exercises/FruitNinja" element={<FruitNinja />} />
+          <Route path="/exercises/StarShooter" element={<StarShooter />} />
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
