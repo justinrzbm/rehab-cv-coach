@@ -23,7 +23,7 @@ export const SelectableCard: React.FC<SelectableCardProps> = ({ Icon, label, col
         selected ? "scale-110" : ""
       )}
       style={{
-        backgroundColor: primed || selected ? "rgba(0,0,0,0.15)" : "hsl(var(--card))",
+        backgroundColor: "hsl(var(--card))",
         border: `4px solid ${color}`,
         boxShadow: primed || selected ? `0 0 0 12px hsl(var(--glow-yellow) / 0.35)` : undefined,
       }}

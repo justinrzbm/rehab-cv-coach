@@ -12,13 +12,13 @@ const exercises = [
 ];
 
 const ExercisesPage: React.FC = () => {
-  useSEO("Rehab Coach – Exercises", "Pick a single exercise to practice with tracking and voice.");
+  useSEO("Rehab Coach – Training Games", "Pick a single exercise to practice with tracking and voice.");
   const nav = useNavigate();
   const [selected, setSelected] = useState(exercises[0].key);
 
   return (
     <main className="min-h-screen" style={{ background: "hsl(var(--accent-exercises) / 0.06)" }}>
-      <AppHeader mode="page" title="Exercises" centerIcon={<Dumbbell />} onBack={() => nav("/")} onHelp={() => {}} accentVar="--accent-exercises" />
+      <AppHeader mode="page" title="Training Games" centerIcon={<Dumbbell />} onBack={() => nav("/")} onHelp={() => {}} accentVar="--accent-exercises" />
 
       <section className="container mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
         <div className="space-y-3">

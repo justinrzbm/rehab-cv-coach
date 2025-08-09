@@ -1,16 +1,43 @@
 // src/pages/Index.tsx
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTTS } from "@/components/tts/useTTS";
+import { SelectableCard } from "@/components/common/SelectableCard";
+import { BookOpen, Dumbbell, LineChart } from "lucide-react";
 import "./index-landing.css";
+
+const HELP_SEQUENCE = [
+  { kind: "mod", label: "Modules", desc: "Modules: Daily activities like feeding, writing, and brushing your teeth." },
+    { kind: "ex", label: "Training Games", desc: "Training Games: Practice individual hand and wrist movements." },
+  { kind: "prog", label: "Progress", desc: "Progress: See your achievements and improvements over time." },
+];
 
 export default function Index() {
   const [showGreeting, setShowGreeting] = useState(false);
-  const userName = "[Name]"; // TODO: wire to real user state
+  const [helpStep, setHelpStep] = useState<number | null>(null);
+  const userName = "Justin"; // TODO: wire to real user state
   const nav = useNavigate();
+  const { speak, stop } = useTTS(true);
 
+  // On mount, play help sequence
   useEffect(() => {
-    const id = setTimeout(() => setShowGreeting(true), 200);
-    return () => clearTimeout(id);
+    setShowGreeting(false);
+    let mounted = true;
+    const runHelp = async () => {
+      for (let i = 0; i < HELP_SEQUENCE.length; ++i) {
+        if (!mounted) return;
+        setHelpStep(i);
+        stop();
+        speak(HELP_SEQUENCE[i].desc);
+        await new Promise((res) => setTimeout(res, 2200));
+      }
+      setHelpStep(null);
+      setShowGreeting(true);
+    };
+    runHelp();
+    return () => { mounted = false; stop(); };
+    // eslint-disable-next-line
   }, []);
 
   return (
@@ -29,7 +56,10 @@ export default function Index() {
         <button
           className="header-btn"
           aria-label="Help"
-          onClick={() => console.log("Help")}
+          onClick={() => {
+            setHelpStep(0);
+            setShowGreeting(false);
+          }}
         >
           <span className="material-icons" style={{ fontSize: 40 }}>
             help_outline
@@ -47,50 +77,41 @@ export default function Index() {
 
       {/* Cards */}
       <section className="main-row">
-        <LandingCard
-          kind="mod"
-          icon="menu_book"
-          label="Modules"
+        <SelectableCard
+          Icon={BookOpen}
+          label="Rehab Activities"
+          colorVar="--accent-modules"
+          primed={helpStep === 0}
           onClick={() => nav("/modules")}
         />
-        <LandingCard
-          kind="ex"
-          icon="fitness_center"
-          label="Exercises"
+        <SelectableCard
+          Icon={Dumbbell}
+          label="Training Games"
+          colorVar="--accent-exercises"
+          primed={helpStep === 1}
           onClick={() => nav("/exercises")}
         />
-        <LandingCard
-          kind="prog"
-          icon="show_chart"
+        <SelectableCard
+          Icon={LineChart}
           label="Progress"
+          colorVar="--accent-progress"
+          primed={helpStep === 2}
           onClick={() => nav("/progress")}
         />
       </section>
+      {/* Help description text */}
+      {helpStep !== null && (
+        <div style={{ position: "absolute", top: 80, left: 0, right: 0, textAlign: "center", fontSize: 24, fontWeight: 600, color: "#222", zIndex: 10 }}>
+          {HELP_SEQUENCE[helpStep].desc}
+        </div>
+      )}
+      <style>{`
+        .main-card.highlight {
+          box-shadow: 0 0 32px 8px #fffbe6, 0 0 0 8px #ffe066;
+          transform: scale(1.08);
+          z-index: 40;
+        }
+      `}</style>
     </main>
-  );
-}
-
-function LandingCard({
-  kind,
-  icon,
-  label,
-  onClick,
-}: {
-  kind: "mod" | "ex" | "prog";
-  icon: string; // Material Icons name
-  label: string;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      className={`main-card ${kind}`}
-      onClick={onClick}
-      aria-label={label}
-    >
-      <span className="material-icons" style={{ fontSize: 72 }}>
-        {icon}
-      </span>
-      <span className="label">{label}</span>
-    </button>
   );
 }
