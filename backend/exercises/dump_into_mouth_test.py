@@ -10,7 +10,7 @@ import math
 MODEL_PATH   = "../yolov10b.pt"
 CONF         = 0.80
 IMG_SIZE     = 768
-DEVICE       = "cpu"
+DEVICE       = "mps"
 CAM_INDEX    = 0
 FRAME_W      = 1280
 FRAME_H      = 720
@@ -19,8 +19,8 @@ TARGET_CLASS = "bottle"
 FPS_SMOOTH_N = 20
 
 # Test-specific thresholds
-MIN_TILT_ANGLE = 30.0  # degrees
-MAX_JERKS = 3
+MIN_TILT_ANGLE = 50.0  # degrees
+MAX_JERKS = 5
 JERK_ANGLE_THRESH_DEG = 10.0  # sudden angle change threshold
 JERK_ACCEL_THRESH = 100.0  # sudden movement threshold
 
@@ -43,7 +43,7 @@ def calculate_bottle_angle(bbox):
     height = y2 - y1
     return math.degrees(math.atan2(width, height))
 
-def main():
+def dump():
     print("🧪 Dump into Mouth Test")
     print("Tilt bottle smoothly to simulate pouring")
     print("Press 's' to start when ready")
@@ -129,16 +129,18 @@ def main():
                                 test_complete = True
                                 
                                 # Print results
-                                print("\n===== DUMP-INTO-MOUTH METRICS =====")
-                                print(f"Tilt Angle: {total_tilt:.1f}° (threshold ≥ {MIN_TILT_ANGLE}°)")
-                                print(f"Pour Smoothness: {jerks_count} jerks (threshold ≤ {MAX_JERKS})")
-                                print("--------------------------------")
+                                # print("\n===== DUMP-INTO-MOUTH METRICS =====")
+                                # print(f"Tilt Angle: {total_tilt:.1f}° (threshold ≥ {MIN_TILT_ANGLE}°)")
+                                # print(f"Pour Smoothness: {jerks_count} jerks (threshold ≤ {MAX_JERKS})")
+                                # print("--------------------------------")
                                 passed = (total_tilt >= MIN_TILT_ANGLE and 
                                         jerks_count <= MAX_JERKS)
                                 if passed:
-                                    print("✅ TEST PASSED!")
+                                    print("✅PASSED!")
+                                    return 1
                                 else:
-                                    print("❌ TEST FAILED!")
+                                    print("❌FAILED!")
+                                    return 0
                                 print("--------------------------------")
 
             # Test controls
@@ -177,6 +179,3 @@ def main():
         hands.close()
         cap.release()
         cv2.destroyAllWindows()
-
-if __name__ == "__main__":
-    main()

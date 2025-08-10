@@ -8,7 +8,7 @@ from collections import deque
 from ultralytics import YOLO
 import mediapipe as mp
 import math
-from reach_bottle import ReachBottleMetrics
+from exercises.reach_bottle import ReachBottleMetrics
 
 # ---------- CONFIG ----------
 MODEL_PATH   = "../yolov10b.pt"  # or yolov8n/s/m/l/x.pt
@@ -30,6 +30,11 @@ FPS_SMOOTH_N = 20
 REACH_GRASP_DISTANCE = 80  # pixels to consider hand "within grasp" of bottle
 REACH_MOVEMENT_THRESHOLD = 5  # minimum movement (pixels) to detect start of movement
 # ----------------------------
+
+# Add constants at top
+MAX_REACH_TIME = 10.0  # seconds
+MAX_REACTION_TIME = 5.0  # seconds
+MAX_JERKS = 30
 
 # --- OpenCV runtime opts ---
 cv2.setUseOptimized(True)
@@ -156,7 +161,7 @@ def detect_conditional_rotations(model, frame_bgr, conf, imgsz, device, angles, 
              all_cls[i], float(all_scores[i])) for i in keep]
 
 # ---------- main ----------
-def main():
+def reach_test(hand = 'r', taggle = 'fixed'):
     print("🎯 REACH BOTTLE TEST - STANDALONE EXERCISE 🎯")
     print("=" * 50)
     print("Instructions:")
@@ -169,7 +174,7 @@ def main():
     
     import os
     # Optional shared config from env
-    env_dom = os.environ.get("DEX_DOMINANT", "").strip().lower()
+    env_dom = hand
     selected_hand_label = 'Left' if env_dom not in ("l", "left") else 'Right'
     # Load YOLO
     model = YOLO(MODEL_PATH)
@@ -306,14 +311,35 @@ def main():
                 
                 # Print results when reach is completed
                 if metrics_result['status'] == 'reached bottle' and metrics_result['reach_time'] is not None:
+                    # Calculate pass/fail
+                    reach_passed = (
+                        metrics_result['reach_time'] <= MAX_REACH_TIME and
+                        metrics_result['reaction_time'] <= MAX_REACTION_TIME and
+                        metrics_result['trajectory_smoothness'] <= MAX_JERKS
+                    )
+                    
                     print(f"\n{'='*60}")
-                    print(f"🎯 REACH TEST COMPLETED! 🎯")
+                    print(f"{'✅ PASSED' if reach_passed else '❌ FAILED'} 🎯")
                     print(f"{'='*60}")
                     print(f"📊 FINAL METRICS SUMMARY:")
-                    print(f"   ⏱️  Reaction Time: {metrics_result['reaction_time']:.3f} seconds")
-                    print(f"   🚀 Reach Time: {metrics_result['reach_time']:.3f} seconds")
-                    print(f"   📈 Trajectory Smoothness: {metrics_result['trajectory_smoothness']} direction changes")
+                    print(f"   ⏱️  Reaction Time: {metrics_result['reaction_time']:.3f}s (max {MAX_REACTION_TIME}s)")
+                    print(f"   🚀 Reach Time: {metrics_result['reach_time']:.3f}s (max {MAX_REACH_TIME}s)")
+                    print(f"   📈 Trajectory Smoothness: {metrics_result['trajectory_smoothness']} changes (max {MAX_JERKS})")
+                    
+                    if not reach_passed:
+                        print("\nFAILURE REASONS:")
+                        if metrics_result['reach_time'] > MAX_REACH_TIME:
+                            print("- Reach time too long")
+                        if metrics_result['reaction_time'] > MAX_REACTION_TIME:
+                            print("- Reaction time too long")
+                        if metrics_result['trajectory_smoothness'] > MAX_JERKS:
+                            print("- Too many direction changes")
+                    
                     print(f"{'='*60}")
+                    if reach_passed:
+                        return 1
+                    else:
+                        return 0
                     print(f"Press 's' to start another test or 'q' to quit\n")
                     # Reset for next test
                     reach_metrics.reset()
@@ -359,7 +385,7 @@ def main():
         cap.release(); cv2.destroyAllWindows()
         print("\n👋 Reach Bottle Test completed. Goodbye!")
 
-if __name__ == "__main__":
-    main()
-
+# if __name__ == "__main__":
+#     result = main()
+#     print(result)
 

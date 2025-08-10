@@ -5,7 +5,7 @@ from collections import deque
 from ultralytics import YOLO
 import mediapipe as mp
 import math
-from grab_hold import ReadyGraspHold
+from exercises.grab_hold import ReadyGraspHold
 
 
 # ---------- CONFIG ----------
@@ -68,7 +68,7 @@ def landmarks_dict(hand_lms, w, h):
     return {i: to_pixels(hand_lms.landmark[i], w, h) for i in range(21)}
 
 
-def main():
+def grab_test(hand = 'r', taggle = 'fixed'):
     global TARGET_MODE
     print("✊ GRAB/HOLD TEST (main.py-style)")
     print("- L/R: switch dominant hand")
@@ -78,9 +78,8 @@ def main():
     print("- Q: quit")
 
     import os
-    # Ask handedness initially (or read from env)
     rh = ReadyGraspHold()
-    env_dom = os.environ.get("DEX_DOMINANT", "").strip().lower()
+    env_dom = hand
     if env_dom in ("left", "l"):
         rh.set_dominant("left")
     elif env_dom in ("right", "r"):
@@ -89,12 +88,10 @@ def main():
         user_in = input("Are you right- or left-handed? [r/l] (Enter for Right): ").strip().lower()
         rh.set_dominant_from_input(user_in)
 
-    # Optional env-driven target mode
-    env_mode = os.environ.get("DEX_TARGET_MODE", "").strip().lower()
+    env_mode = taggle
     if env_mode in ("fixed", "head"):
         TARGET_MODE = env_mode
 
-    # Load YOLO
     model = YOLO(MODEL_PATH)
     names = model.names
     class_filter = None
@@ -103,7 +100,6 @@ def main():
         if ids:
             class_filter = ids
 
-    # Webcam
     cap = cv2.VideoCapture(CAM_INDEX)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_W)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_H)
@@ -136,6 +132,7 @@ def main():
     cv2.setMouseCallback(win_name, on_mouse)
 
     grab_announced = False
+    grab_start_time = None
     try:
         while True:
             ok, frame = cap.read()
@@ -150,12 +147,10 @@ def main():
             hand_results = hands.process(img_rgb)
             pose_results = pose.process(img_rgb)
 
-            # Hands → draw landmarks and collect full 21-landmark dicts for left/right
             left_landmarks_px = None
             right_landmarks_px = None
             if hand_results.multi_hand_landmarks:
                 for lms, handed in zip(hand_results.multi_hand_landmarks, hand_results.multi_handedness):
-                    # Draw MediaPipe hand landmarks overlay
                     mp_draw.draw_landmarks(
                         frame, lms, mp_hands.HAND_CONNECTIONS,
                         mp_styles.get_default_hand_landmarks_style(),
@@ -168,7 +163,6 @@ def main():
                     else:
                         right_landmarks_px = landmarks_dict(lms, w, h)
 
-            # Overlay hand labels and index tip markers for clarity
             if left_landmarks_px:
                 if 0 in left_landmarks_px:
                     lx, ly = left_landmarks_px[0]
@@ -182,12 +176,10 @@ def main():
                 if 8 in right_landmarks_px:
                     cv2.circle(frame, right_landmarks_px[8], 6, (0, 210, 80), -1)
 
-            # Emphasize dominant index tip
             dom_landmarks = right_landmarks_px if rh.dominant == 'right' else left_landmarks_px
             if dom_landmarks and 8 in dom_landmarks:
                 cv2.circle(frame, dom_landmarks[8], 9, (0, 255, 255), 2)
 
-            # Ears for head width
             left_ear_px = right_ear_px = None
             if pose_results.pose_landmarks:
                 lms = pose_results.pose_landmarks.landmark
@@ -203,7 +195,6 @@ def main():
             if left_ear_px and right_ear_px:
                 ear_dist = math.hypot(left_ear_px[0]-right_ear_px[0], left_ear_px[1]-right_ear_px[1])
 
-            # YOLO bottle detection
             detections = detect_on_frame(model, frame, CONF, IMG_SIZE, DEVICE, class_filter)
             top_bottle_center = None
             top_bottle_box = None
@@ -222,7 +213,6 @@ def main():
                     top_bottle_center = ((x1 + x2)//2, (y1 + y2)//2)
                     top_bottle_box = (x1, y1, x2, y2)
 
-            # Keyboard controls
             key = cv2.waitKey(1) & 0xFF
             if key in (ord('l'), ord('L')): rh.set_dominant('left')
             elif key in (ord('r'), ord('R')): rh.set_dominant('right')
@@ -231,9 +221,9 @@ def main():
                 if top_bottle_center: fixed_bottle_px = top_bottle_center
                 dom = right_landmarks_px if rh.dominant == 'right' else left_landmarks_px
                 if dom and 8 in dom: fixed_hand_px = dom[8]
-            elif key == ord('q'): break
+            elif key == ord('q'):
+                return 0  # User quit without passing
 
-            # Targets & tolerance
             if TARGET_MODE == 'fixed':
                 bottle_target = fixed_bottle_px or (int(FIXED_BOTTLE_FRAC[0]*w), int(FIXED_BOTTLE_FRAC[1]*h))
                 hand_target   = fixed_hand_px   or (int(FIXED_HAND_FRAC[0]*w),   int(FIXED_HAND_FRAC[1]*h))
@@ -245,7 +235,6 @@ def main():
                 toler_px = max(12, int(INIT_TOLER_FRAC * (ear_dist or 400)))
                 mode_label = "Mode: HEAD-SCALED (T to toggle)"
 
-            # Draw targets
             bottle_ring_color = (0, 180, 255)
             hand_ring_color   = (0, 210, 80) if rh.dominant == 'right' else (80, 160, 255)
             if bottle_target: cv2.circle(frame, bottle_target, toler_px, bottle_ring_color, 2)
@@ -253,7 +242,6 @@ def main():
             if bottle_target: cv2.circle(frame, bottle_target, 5, bottle_ring_color, -1)
             if hand_target:   cv2.circle(frame, hand_target,   5, hand_ring_color, -1)
 
-            # Update READY/GRASP logic
             result = rh.update(
                 current_time=time.time(),
                 left_hand_landmarks_px=left_landmarks_px,
@@ -265,7 +253,6 @@ def main():
                 toler_px=toler_px,
             )
 
-            # Visuals: READY and GRABBED
             if result['ready']:
                 cv2.putText(frame, "READY", (w//2 - 90, 90), cv2.FONT_HERSHEY_TRIPLEX, 1.7, (0, 255, 0), 3)
             if top_bottle_box is not None and result['grasped']:
@@ -273,24 +260,23 @@ def main():
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 230, 0), 3)
                 cv2.putText(frame, "GRABBED", (x1, max(22, y1 - 10)), cv2.FONT_HERSHEY_TRIPLEX, 0.9, (0, 230, 0), 2)
 
-            # Immediate completion on GRAB detection (show grabbed box, pause 2s)
             if result['grasped']:
-                if top_bottle_box is not None:
-                    x1, y1, x2, y2 = top_bottle_box
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 230, 0), 3)
-                cv2.putText(frame, "GRABBED", (w//2 - 100, 120), cv2.FONT_HERSHEY_TRIPLEX, 1.3, (0, 230, 0), 3)
-                cv2.imshow(win_name, frame)
-                if not grab_announced:
-                    print("grabbed successful")
+                if grab_start_time is None:
+                    grab_start_time = time.time()
+                elif not grab_announced and (time.time() - grab_start_time) >= 1.0:
+                    print("✅ PASSED!")
                     grab_announced = True
+                    return 1
+            else:
+                grab_start_time = None
+                grab_announced = False
+                # removed premature return 0
 
-            # HUD
             hud1 = f"Dominant: {rh.dominant.capitalize()}   {mode_label}   (S: snap, L/R: switch hand)   READY uses INDEX"
             cv2.putText(frame, hud1, (10, 32), cv2.FONT_HERSHEY_DUPLEX, 0.8, (220, 255, 220), 2)
             if mouse_last:
                 cv2.putText(frame, mouse_last, (10, 60), cv2.FONT_HERSHEY_DUPLEX, 0.7, (220, 220, 255), 2)
 
-            # FPS
             now_t = time.time()
             fps = 1.0 / max(1e-6, (now_t - prev_t))
             prev_t = now_t
@@ -299,15 +285,12 @@ def main():
             cv2.putText(frame, f"FPS: {fps_avg:.1f}", (w-180, 32), cv2.FONT_HERSHEY_DUPLEX, 0.8, (0, 255, 0), 2)
 
             cv2.imshow(win_name, frame)
-            if key == ord('q'):
-                break
 
     finally:
         hands.close(); pose.close()
         cap.release(); cv2.destroyAllWindows()
 
 
-if __name__ == "__main__":
-    main()
-
-
+# if __name__ == "__main__":
+#     result = main()
+#     print(result)

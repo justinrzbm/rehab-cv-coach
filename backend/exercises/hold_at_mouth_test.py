@@ -1,12 +1,3 @@
-# Reach-to-Mouth with Calibration (YOLO + MediaPipe)
-# Keys:
-#   1 = use bottle center as reference (default if bottle detected)
-#   2 = use RIGHT index fingertip as reference
-#   3 = use LEFT  index fingertip as reference
-#   C = calibrate threshold from current reference→mouth distance (normalized by head width)
-#   Q = quit
-# pip install ultralytics opencv-python mediapipe
-
 import cv2
 import time
 import math
@@ -16,30 +7,24 @@ from ultralytics import YOLO
 import mediapipe as mp
 
 # -------- CONFIG --------
-MODEL_PATH   = "yolov10b.pt"   # or any YOLO model with "bottle" class
-CONF         = 0.50            # YOLO confidence
+MODEL_PATH   = "yolov10b.pt"
+CONF         = 0.50
 IMG_SIZE     = 768
 DEVICE       = "mps"           # 0 (CUDA), "cpu", "mps"
 HALF         = False
 CAM_INDEX    = 0
 FRAME_W      = 1280
 FRAME_H      = 720
-FLIP_VIEW    = True            # mirror preview (feels natural on laptops)
-TARGET_CLASS = "bottle"        # None = all classes
+FLIP_VIEW    = True
+TARGET_CLASS = "bottle"
 IOU_NMS      = 0.50
 FPS_SMOOTH_N = 20
 HOLD_TIME_REQUIRED = 5
 
-# Calibration: distance threshold = mouth_scale * ear_distance
-DEFAULT_MOUTH_SCALE = 0.80     # starting guess; press C to personalize
+DEFAULT_MOUTH_SCALE = 0.80
 MIN_SCALE, MAX_SCALE = 0.10, 2.50
 
-# Reference selector
-REF_MODE = "auto"              # "auto" | "bottle" | "right_index" | "left_index"
-
-# ------------------------
-
-cv2.setUseOptimized(True)
+REF_MODE = "auto"
 
 # MediaPipe
 mp_hands  = mp.solutions.hands
@@ -75,25 +60,21 @@ def detect_on_frame(model, frame_bgr, class_filter, conf, imgsz, device):
         out.append((x1, y1, x2, y2, cls_id, score))
     return out
 
-
-def main():
+def hold(hand = "r"):
     global REF_MODE
 
-    # YOLO
     model = YOLO(MODEL_PATH)
     if HALF and DEVICE != "cpu":
         try: model.fuse()
         except Exception: pass
     names = model.names
 
-    # class filter
     class_filter = None
     if TARGET_CLASS:
         ids = [i for i, n in names.items() if str(n).lower() == TARGET_CLASS]
         if ids: class_filter = ids
         else:   print(f'WARNING: class "{TARGET_CLASS}" not in model; running with all classes.')
 
-    # Camera
     cap = cv2.VideoCapture(CAM_INDEX)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_W)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_H)
@@ -102,7 +83,6 @@ def main():
     if not cap.isOpened():
         raise RuntimeError("Cannot open webcam")
 
-    # MediaPipe
     hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2, model_complexity=0,
                            min_detection_confidence=0.5, min_tracking_confidence=0.5)
     pose  = mp_pose.Pose(static_image_mode=False, model_complexity=0, enable_segmentation=False,
@@ -110,11 +90,15 @@ def main():
     face  = mp_mesh.FaceMesh(static_image_mode=False, max_num_faces=1, refine_landmarks=True,
                              min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
-    # State
     mouth_scale = DEFAULT_MOUTH_SCALE
-    last_near   = False
     fps_deque   = deque(maxlen=FPS_SMOOTH_N)
     prev_t      = time.time()
+
+    MAX_RETRIES = 3
+    retry_count = 0
+    hold_start_time = None
+    was_holding = False
+    test_completed = False
 
     win = "Reach-to-Mouth (C to calibrate • 1/2/3 to pick ref)"
     cv2.namedWindow(win, cv2.WINDOW_NORMAL)
@@ -129,16 +113,13 @@ def main():
             h, w = frame.shape[:2]
             img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-            # --- MediaPipe: Hands, Pose (ears), Face (mouth) ---
             hand_results = hands.process(img_rgb)
             pose_results = pose.process(img_rgb)
             face_results = face.process(img_rgb)
 
-            # Hands: index fingertips
             right_index_px = left_index_px = None
             if hand_results.multi_hand_landmarks:
                 for lms, handed in zip(hand_results.multi_hand_landmarks, hand_results.multi_handedness):
-                    # draw hand skeleton
                     mp_draw.draw_landmarks(
                         frame, lms, mp_hands.HAND_CONNECTIONS,
                         mp_styles.get_default_hand_landmarks_style(),
@@ -151,7 +132,6 @@ def main():
                     else:
                         left_index_px  = idx_px
 
-            # Pose: ears for scale
             left_ear_px = right_ear_px = None
             if pose_results.pose_landmarks:
                 lms = pose_results.pose_landmarks.landmark
@@ -170,7 +150,6 @@ def main():
                 cv2.putText(frame, f"HeadW: {ear_dist:.0f}px  Scale: {mouth_scale:.2f}",
                             (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (220, 255, 220), 2)
 
-            # Face: mouth center
             mouth_center_px = None
             if face_results and face_results.multi_face_landmarks:
                 mp_draw.draw_landmarks(
@@ -182,17 +161,15 @@ def main():
                 )
                 lmsf = face_results.multi_face_landmarks[0].landmark
                 try:
-                    ux, uy = to_pixels(lmsf[13], w, h)  # upper inner lip
-                    lx, ly = to_pixels(lmsf[14], w, h)  # lower inner lip
+                    ux, uy = to_pixels(lmsf[13], w, h)
+                    lx, ly = to_pixels(lmsf[14], w, h)
                     mouth_center_px = ((ux + lx)//2, (uy + ly)//2)
                     cv2.circle(frame, mouth_center_px, 5, (0, 255, 255), -1)
                 except IndexError:
                     pass
 
-            # --- YOLO: bottle ---
             detections = detect_on_frame(model, frame, class_filter, CONF, IMG_SIZE, DEVICE)
             top_bottle_center = None
-            top_bottle_box = None
             top_bottle_score = -1.0
             for (x1, y1, x2, y2, cls_id, score) in detections:
                 name = names.get(cls_id, str(cls_id))
@@ -207,9 +184,7 @@ def main():
                 if score > top_bottle_score:
                     top_bottle_score = score
                     top_bottle_center = ((x1 + x2)//2, (y1 + y2)//2)
-                    top_bottle_box = (x1, y1, x2, y2)
 
-            # --- Choose reference point ---
             ref_pt = None
             ref_label = None
             if REF_MODE == "bottle" and top_bottle_center:
@@ -219,7 +194,6 @@ def main():
             elif REF_MODE == "left_index" and left_index_px:
                 ref_pt = left_index_px; ref_label = "Left index"
             else:
-                # auto mode: prefer bottle if present; else right index; else left index
                 if top_bottle_center:
                     ref_pt = top_bottle_center; ref_label = "Bottle center"
                 elif right_index_px:
@@ -227,7 +201,6 @@ def main():
                 elif left_index_px:
                     ref_pt = left_index_px; ref_label = "Left index"
 
-            # --- Keyboard input ---
             key = cv2.waitKey(1) & 0xFF
             if key == ord('1'): REF_MODE = "bottle"
             elif key == ord('2'): REF_MODE = "right_index"
@@ -243,52 +216,54 @@ def main():
             elif key == ord('q'):
                 break
 
-            # --- Reach-to-mouth check ---
-            reached = False
             if ear_dist and mouth_center_px and ref_pt:
                 thresh = mouth_scale * ear_dist
                 d_ref = euclid(ref_pt, mouth_center_px)
                 near = d_ref <= thresh
 
-                # Visualize
                 cv2.circle(frame, mouth_center_px, int(thresh), (0, 200, 255), 2)
                 cv2.line(frame, mouth_center_px, ref_pt, (0, 200, 255), 2)
                 cv2.putText(frame, f"{ref_label or 'Ref'}→Mouth: {d_ref:.0f}/{thresh:.0f}px",
                             (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200, 200, 255), 2)
 
-                if near and not last_near:
-                    print("Reached mouth!")
-                last_near = near
-
                 if near:
                     current_time = time.time()
                     if hold_start_time is None:
                         hold_start_time = current_time
-                    
+
                     elapsed = current_time - hold_start_time
                     remaining = max(0, HOLD_TIME_REQUIRED - elapsed)
-                    
-                    if remaining > 0:
-                        # Show countdown
-                        cv2.putText(frame, f"HOLD: {remaining:.1f}s", (w//2 - 170, 100),
-                                  cv2.FONT_HERSHEY_TRIPLEX, 1.1, (0, 255, 0), 3)
-                    else:
-                        # Task complete
-                        cv2.putText(frame, "TASK COMPLETE!", (w//2 - 170, 100),
-                                  cv2.FONT_HERSHEY_TRIPLEX, 1.1, (0, 255, 0), 3)
-                        print("\n===== HOLD AT MOUTH TEST =====")
-                        print("✅ Successfully held position for 5 seconds!")
-                        print("---------------------------")
-                else:
-                    # Reset timer if position lost
-                    hold_start_time = None
-    
 
-            # HUD
+                    if remaining > 0:
+                        cv2.putText(frame, f"HOLD: {remaining:.1f}s", (w//2 - 170, 100),
+                                    cv2.FONT_HERSHEY_TRIPLEX, 1.1, (0, 255, 0), 3)
+                    else:
+                        cv2.putText(frame, "TASK COMPLETE!", (w//2 - 170, 100),
+                                    cv2.FONT_HERSHEY_TRIPLEX, 1.1, (0, 255, 0), 3)
+                        if not test_completed:
+                            hold_passed = retry_count <= MAX_RETRIES
+                            # print(f"\n{'='*60}")
+                            print(f"{'✅ PASSED' if hold_passed else '❌ FAILED'} 🎯")
+                            print(f"{'='*60}")
+                            print(f"Hold Duration: {HOLD_TIME_REQUIRED}s")
+                            print(f"Number of Retries: {retry_count} (max {MAX_RETRIES})")
+                            print(f"{'='*60}")
+                            test_completed = True
+                        if hold_passed:
+                            return 1
+                        else:
+                            return 0
+                    was_holding = True
+                else:
+                    if was_holding:
+                        retry_count += 1
+                    was_holding = False
+                    hold_start_time = None
+                    test_completed = False
+
             mode_text = f"Ref: {REF_MODE.upper()}  (1/2/3 or A=auto)   C=calibrate   Q=quit"
             cv2.putText(frame, mode_text, (10, 30), cv2.FONT_HERSHEY_DUPLEX, 0.75, (220, 255, 220), 2)
 
-            # FPS
             now = time.time()
             fps = 1.0 / max(1e-6, (now - prev_t))
             prev_t = now
@@ -306,5 +281,3 @@ def main():
             pass
         cap.release(); cv2.destroyAllWindows()
 
-if __name__ == "__main__":
-    main()
