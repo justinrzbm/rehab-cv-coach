@@ -26,7 +26,12 @@ const ModuleInfo: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showNext, setShowNext] = useState(false);
 
-  // Reveal Next after 2s of actual playback
+  
+  // Overlay presentation for pause feedback
+  const [overlayAlpha, setOverlayAlpha] = useState(0);
+  const [showPauseGlyph, setShowPauseGlyph] = useState(false);
+  const overlayTimerRef = useRef<number | null>(null);
+// Reveal Next after 2s of actual playback
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid) return;
@@ -82,21 +87,21 @@ const ModuleInfo: React.FC = () => {
             autoPlay
            
             playsInline
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
+            onPlay={() => { setIsPlaying(true); setOverlayAlpha(0); setShowPauseGlyph(false); }}
+            onPause={() => { setIsPlaying(false); setShowPauseGlyph(true); setOverlayAlpha(0.25); if (overlayTimerRef.current) window.clearTimeout(overlayTimerRef.current); overlayTimerRef.current = window.setTimeout(() => { setOverlayAlpha(0); setShowPauseGlyph(false); }, 900); }}
           />
 
           {/* Overlay control */}
           <button
             onClick={togglePlay}
-            className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition"
+            className="absolute inset-0 flex items-center justify-center transition" style={{ background: `rgba(0,0,0, ${overlayAlpha})`, transition: "background 300ms ease" }}
             aria-label={isPlaying ? "Pause" : "Play"}
           >
-            {isPlaying ? (
-              <Pause size={64} className="text-white drop-shadow-lg" />
-            ) : (
-              <RotateCcw size={64} className="text-white drop-shadow-lg" />
-            )}
+            {showPauseGlyph ? (
+            <Pause size={64} className="text-white drop-shadow-lg transition-opacity" style={{ opacity: showPauseGlyph ? 1 : 0 }} />
+          ) : (!isPlaying ? (
+            <RotateCcw size={64} className="text-white drop-shadow-lg" />
+          ) : null)}
           </button>
           {/* Mute/Unmute button */}
           <button
