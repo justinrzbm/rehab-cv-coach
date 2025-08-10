@@ -4,8 +4,12 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTTS } from "@/components/tts/useTTS";
 import { SelectableCard } from "@/components/common/SelectableCard";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { toast } from "@/components/ui/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { BookOpen, Dumbbell, LineChart } from "lucide-react";
 import "./index-landing.css";
+
 
 const HELP_SEQUENCE = [
   { kind: "mod", label: "Modules", desc: "Modules: Daily activities like feeding, writing, and brushing your teeth." },
@@ -29,7 +33,7 @@ export default function Index() {
       setHelpStep(i);
       stop();
       speak(HELP_SEQUENCE[i].desc);
-      await new Promise((res) => setTimeout(res, 4000));
+      await new Promise((res) => setTimeout(res, 5000));
     }
     setHelpStep(null);
     setShowGreeting(true);
@@ -41,29 +45,32 @@ export default function Index() {
     // eslint-disable-next-line
   }, []);
 
+  // Suggested activity toast after 15s
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const message = "Suggested: would you like to try the Feeding activity? Tap here, or say \"Yes\" to begin this activity";
+      toast({
+        title: "Suggested: try the Feeding activity",
+        description: "Tap here, or say \"Yes\" to begin this activity",
+        onClick: () => nav("/modules/feeding/info"),
+        action: <ToastAction altText="Begin" onClick={() => nav("/modules/feeding/info")}>Start</ToastAction>,
+      });
+      speak(message);
+    }, 15000);
+    return () => clearTimeout(t);
+  }, [nav, speak]);
+
+
   return (
     <main id="landing-root">
       {/* Header */}
-      <header className="header">
-        <button
-          className="header-btn"
-          aria-label="Exit"
-          onClick={() => console.log("Exit")}
-        >
-          <span className="material-icons" style={{ fontSize: 40 }}>
-            logout
-          </span>
-        </button>
-        <button
-          className="header-btn"
-          aria-label="Help"
-          onClick={() => { runHelp(); }}
-        >
-          <span className="material-icons" style={{ fontSize: 40 }}>
-            help_outline
-          </span>
-        </button>
-      </header>
+      <AppHeader
+        mode="home"
+        title="Handelit Home"
+        onExit={() => console.log("Exit")}
+        onHelp={() => { runHelp(); }}
+      />
+
 
       {/* Greeting */}
       <h1 className={`main-greeting ${showGreeting ? "show" : ""}`}>

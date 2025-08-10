@@ -33,7 +33,7 @@ const ExercisesPage: React.FC = () => {
       setHelpStep(i);
       stop();
       speak(EXERCISES[i].desc);
-      await new Promise((res) => setTimeout(res, 4000));
+      await new Promise((res) => setTimeout(res, 5000));
     }
     setHelpStep(null);
   };

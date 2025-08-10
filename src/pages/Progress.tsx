@@ -5,6 +5,8 @@ import { LineChart, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSEO } from "@/hooks/useSEO";
+import rehabImg from "../../assets/img/rehabscreenshot1.png";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface ModuleBar {
   id: string;
@@ -27,22 +29,22 @@ const BarRow: React.FC<{ bar: ModuleBar }> = ({ bar }) => {
     <div className="w-full max-w-xl flex flex-col items-center">
       <div className="mb-2 text-lg font-semibold text-center capitalize">{bar.module_name}</div>
       <div className="w-full flex items-center gap-3">
-        <div className="relative w-full h-10 rounded-md overflow-hidden" style={{ border: "2px solid hsl(0 0% 0%)", background: "hsl(var(--card))" }}>
+        <div className="relative w-full h-10 rounded-md" style={{ border: "2px solid hsl(0 0% 0%)", background: "hsl(var(--card))", overflow: "visible" }}>
           <div
             className="h-full"
             style={{
               width: pct + "%",
               background: "hsl(var(--accent-progress))",
-              transition: "width 900ms ease",
+              transition: "width 2000ms ease",
             }}
           />
+          {isPerfect && (
+            <div className="absolute inset-y-0 right-1 flex items-center gap-1 text-primary">
+              <Star className="text-yellow-500 animate-pulse" size={22} />
+              <span className="text-sm font-semibold">congrats!</span>
+            </div>
+          )}
         </div>
-        {isPerfect && (
-          <div className="flex items-center gap-1 text-primary">
-            <Star className="text-yellow-500 animate-pulse" size={22} />
-            <span className="text-sm font-semibold">congrats!</span>
-          </div>
-        )}
       </div>
       <div className="mt-1 text-sm text-muted-foreground">{succeeded} / {total} subtasks succeeded</div>
     </div>
@@ -100,11 +102,20 @@ const ProgressPage: React.FC = () => {
           <ProgressBars bars={bars} />
         )}
 
-        {/* Last task image */}
-        <figure className="mt-6 flex flex-col items-center">
-          <img src="/placeholder.svg" alt="Last task visualized" className="w-full max-w-xl rounded-lg border" loading="lazy" />
-          <figcaption className="mt-2 text-sm text-muted-foreground">Last task visualized</figcaption>
-        </figure>
+        {/* Last task visualized collapsible */}
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <button className="mt-6 text-sm font-medium text-primary underline">
+              Last task visualized (tap to view)
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <figure className="mt-3 flex flex-col items-center">
+              <img src={rehabImg} alt="Last task visualized" className="w-full max-w-lg rounded-lg border" loading="lazy" />
+              <figcaption className="mt-2 text-sm text-muted-foreground">Last task visualized</figcaption>
+            </figure>
+          </CollapsibleContent>
+        </Collapsible>
       </section>
     </main>
   );

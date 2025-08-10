@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { ArrowLeft, HelpCircle, LogOut, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, HelpCircle, LogOut } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
 interface AppHeaderProps {
@@ -23,33 +24,38 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 }) => {
   const accent = accentVar ? `hsl(var(${accentVar}))` : undefined;
 
-  // TTS toggle synced via localStorage + custom event
-  const [ttsEnabled, setTtsEnabled] = useState<boolean>(() => {
-    const v = localStorage.getItem("ttsEnabled");
-    return v === null ? true : v !== "false";
+  // Global volume slider state synced via localStorage + custom event
+  const [volume, setVolume] = useState<number>(() => {
+    const v = Number(localStorage.getItem("globalVolume"));
+    return isNaN(v) ? 0.5 : v;
   });
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === "ttsEnabled" && e.newValue != null) setTtsEnabled(e.newValue !== "false");
+      if (e.key === "globalVolume" && e.newValue != null) {
+        const n = Number(e.newValue);
+        if (!isNaN(n)) setVolume(n);
+      }
     };
-    const onCustom = (e: any) => setTtsEnabled(Boolean(e.detail?.enabled));
+    const onCustom = (e: any) => {
+      const n = Number(e.detail?.volume);
+      if (!isNaN(n)) setVolume(n);
+    };
     window.addEventListener("storage", onStorage);
-    window.addEventListener("tts-enabled-changed", onCustom as any);
+    window.addEventListener("global-volume-changed", onCustom as any);
     return () => {
       window.removeEventListener("storage", onStorage);
-      window.removeEventListener("tts-enabled-changed", onCustom as any);
+      window.removeEventListener("global-volume-changed", onCustom as any);
     };
   }, []);
-  const toggleTTS = () => {
-    const next = !ttsEnabled;
-    setTtsEnabled(next);
-    localStorage.setItem("ttsEnabled", String(next));
-    window.dispatchEvent(new CustomEvent("tts-enabled-changed", { detail: { enabled: next } }));
+  const updateVolume = (val: number) => {
+    setVolume(val);
+    localStorage.setItem("globalVolume", String(val));
+    window.dispatchEvent(new CustomEvent("global-volume-changed", { detail: { volume: val } }));
   };
 
   return (
     <header className="h-16 flex items-center justify-between px-4" style={accent ? { borderColor: accent } : undefined}>
-      <div className="w-16 flex items-center justify-start">
+      <div className="w-64 flex items-center justify-start">
         {mode === "home" ? (
           <button aria-label="Exit" onClick={onExit} className="p-2 rounded-full hover-scale" title="Exit">
             <LogOut size={28} />
@@ -60,16 +66,25 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </button>
         )}
       </div>
-      <div className="flex items-center gap-2 text-2xl font-bold">
+      <div className="flex-1 flex items-center justify-center gap-2 text-2xl font-bold">
         {centerIcon}
         {title && <span>{title}</span>}
       </div>
-      <div className="w-28 flex items-center justify-end gap-2">
-        <button aria-label={ttsEnabled ? "Mute voice" : "Unmute voice"} onClick={toggleTTS} className="p-2 rounded-full hover-scale" title={ttsEnabled ? "Mute voice" : "Unmute voice"} style={accent ? { color: accent } : undefined}>
-          {ttsEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />}
-        </button>
-        <button aria-label="Help" onClick={onHelp} className="p-2 rounded-full hover-scale" title="Help" style={accent ? { color: accent } : undefined}>
-          <HelpCircle size={28} />
+      <div className="w-64 flex items-center justify-end gap-3">
+        <div className="hidden sm:flex items-center gap-2 w-40">
+          <span className="text-xs text-muted-foreground">Vol</span>
+          <Slider
+            value={[volume]}
+            onValueChange={(v) => updateVolume(v[0] ?? 0)}
+            min={0}
+            max={1}
+            step={0.01}
+            aria-label="Global volume"
+          />
+        </div>
+        <button aria-label="Help" onClick={onHelp} className="p-2 rounded-full hover-scale flex items-center gap-1" title="Help" style={accent ? { color: accent } : undefined}>
+          <HelpCircle size={22} />
+          <span className="text-sm font-medium">Help</span>
         </button>
       </div>
     </header>
