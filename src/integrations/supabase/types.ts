@@ -63,6 +63,7 @@ export type Database = {
           module_name: string;
           module_is_completed: boolean;
           subtasks_succeeded: number;
+          subtasks_total:number;
           duration_seconds: number | null;
           metrics: Json | null;
           data: Json | null;
@@ -74,6 +75,7 @@ export type Database = {
           module_name: string;
           module_is_completed?: boolean;
           subtasks_succeeded?: number;
+          subtasks_total:number;
           duration_seconds?: number | null;
           metrics?: Json | null;
           data?: Json | null;
@@ -85,6 +87,7 @@ export type Database = {
           module_name?: string;
           module_is_completed?: boolean;
           subtasks_succeeded?: number;
+          subtasks_total:number;
           duration_seconds?: number | null;
           metrics?: Json | null;
           data?: Json | null;
