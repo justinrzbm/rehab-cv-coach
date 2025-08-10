@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { LineChart } from "lucide-react";
+import { LineChart, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSEO } from "@/hooks/useSEO";
@@ -12,6 +12,50 @@ interface ModuleBar {
   subtasks_succeeded: number;
   subtasks_total: number;
 }
+
+const BarRow: React.FC<{ bar: ModuleBar }> = ({ bar }) => {
+  const [pct, setPct] = useState(0);
+  const total = 5; // Always show out of 5
+  const succeeded = Math.min(bar.subtasks_succeeded ?? 0, total);
+  const target = (succeeded / total) * 100;
+  useEffect(() => {
+    const t = setTimeout(() => setPct(target), 50);
+    return () => clearTimeout(t);
+  }, [target]);
+  const isPerfect = succeeded >= total;
+  return (
+    <div className="w-full max-w-xl flex flex-col items-center">
+      <div className="mb-2 text-lg font-semibold text-center capitalize">{bar.module_name}</div>
+      <div className="w-full flex items-center gap-3">
+        <div className="relative w-full h-10 rounded-md overflow-hidden" style={{ border: "2px solid hsl(0 0% 0%)", background: "hsl(var(--card))" }}>
+          <div
+            className="h-full"
+            style={{
+              width: pct + "%",
+              background: "hsl(var(--accent-progress))",
+              transition: "width 900ms ease",
+            }}
+          />
+        </div>
+        {isPerfect && (
+          <div className="flex items-center gap-1 text-primary">
+            <Star className="text-yellow-500 animate-pulse" size={22} />
+            <span className="text-sm font-semibold">congrats!</span>
+          </div>
+        )}
+      </div>
+      <div className="mt-1 text-sm text-muted-foreground">{succeeded} / {total} subtasks succeeded</div>
+    </div>
+  );
+};
+
+const ProgressBars: React.FC<{ bars: ModuleBar[] }> = ({ bars }) => (
+  <div className="w-full flex flex-col items-center gap-6">
+    {bars.map((b) => (
+      <BarRow key={b.id} bar={b} />
+    ))}
+  </div>
+);
 
 const ProgressPage: React.FC = () => {
   useSEO("Rehab Coach – Progress", "See your achievements and trends over time.");
@@ -46,32 +90,21 @@ const ProgressPage: React.FC = () => {
   }, []);
 
   return (
-    <main className="min-h-screen" style={{ background: "hsl(var(--accent-progress) / 0.06)" }}>
+    <main className="min-h-screen" style={{ background: "hsl(var(--accent-progress) / 0.08)" }}>
       <AppHeader mode="page" title="Progress" centerIcon={<LineChart />} onBack={() => nav("/")} onHelp={() => {}} accentVar="--accent-progress" />
 
       <section className="container mx-auto p-6 flex flex-col gap-8 items-center">
         {bars.length === 0 ? (
           <div className="text-center text-lg text-muted-foreground">No progress data for test-user.</div>
         ) : (
-          bars.map((bar) => (
-            <div key={bar.id} className="w-full max-w-xl flex flex-col items-center">
-              <div className="mb-2 text-lg font-semibold text-center">{bar.module_name}</div>
-              <div className="flex w-full h-10 rounded-lg overflow-hidden border border-gray-300 bg-white">
-                {Array.from({ length: bar.subtasks_total }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 h-full"
-                    style={{
-                      background: i < bar.subtasks_succeeded ? 'hsl(var(--accent-progress))' : '#e5e7eb',
-                      transition: 'background 0.3s',
-                    }}
-                  />
-                ))}
-              </div>
-              <div className="mt-1 text-sm text-gray-500">{bar.subtasks_succeeded} / {bar.subtasks_total} subtasks succeeded</div>
-            </div>
-          ))
+          <ProgressBars bars={bars} />
         )}
+
+        {/* Last task image */}
+        <figure className="mt-6 flex flex-col items-center">
+          <img src="/placeholder.svg" alt="Last task visualized" className="w-full max-w-xl rounded-lg border" loading="lazy" />
+          <figcaption className="mt-2 text-sm text-muted-foreground">Last task visualized</figcaption>
+        </figure>
       </section>
     </main>
   );

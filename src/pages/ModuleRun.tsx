@@ -57,7 +57,7 @@ const ModuleRun: React.FC = () => {
       if (user.user) {
         const { data, error } = await supabase
           .from("module_attempts")
-          .insert({ user_id: user.user.id, module_name: slug!, is_completed: false })
+          .insert({ user_id: user.user.id, module_name: slug!, module_is_completed: false, subtasks_total: 5 })
           .select("id")
           .maybeSingle();
         if (!error && data) setModuleAttemptId(data.id);
@@ -165,7 +165,7 @@ const ModuleRun: React.FC = () => {
         const duration = (Date.now() - startTime) / 1000;
         await supabase
           .from("module_attempts")
-          .update({ is_completed: completed, duration_seconds: duration })
+          .update({ module_is_completed: completed, duration_seconds: duration, subtasks_total: 5 })
           .eq("id", moduleAttemptId);
       }
     } catch {}
@@ -187,7 +187,7 @@ const ModuleRun: React.FC = () => {
   return (
     <main
       className="min-h-screen relative"
-      style={{ background: "hsl(var(--accent-modules) / 0.06)" }}
+      style={{ background: "hsl(var(--accent-modules) / 0.08)" }}
     >
       <AppHeader
         mode="page"

@@ -8,7 +8,14 @@ export type TTSOptions = {
 };
 
 export function useTTS(enabledDefault = true, defaultOptions: TTSOptions = { rate: 0.95, pitch: 1, volume: 1, lang: 'en-US' }) {
-  const [enabled, setEnabled] = useState(enabledDefault);
+  const [enabledState, setEnabledState] = useState<boolean>(() => {
+    try {
+      const v = localStorage.getItem('ttsEnabled');
+      return v === null ? enabledDefault : v !== 'false';
+    } catch {
+      return enabledDefault;
+    }
+  });
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [voice, setVoice] = useState<SpeechSynthesisVoice | null>(null);
   const optionsRef = useRef<TTSOptions>(defaultOptions);
@@ -34,8 +41,29 @@ export function useTTS(enabledDefault = true, defaultOptions: TTSOptions = { rat
     };
   }, [voice]);
 
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'ttsEnabled' && e.newValue != null) setEnabledState(e.newValue !== 'false');
+    };
+    const onCustom = (e: any) => setEnabledState(Boolean(e.detail?.enabled));
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('tts-enabled-changed', onCustom as any);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('tts-enabled-changed', onCustom as any);
+    };
+  }, []);
+
+  const setEnabled = (val: boolean) => {
+    setEnabledState(val);
+    try {
+      localStorage.setItem('ttsEnabled', String(val));
+      window.dispatchEvent(new CustomEvent('tts-enabled-changed', { detail: { enabled: val } }));
+    } catch {}
+  };
+
   const speak = (text: string, opts?: TTSOptions) => {
-    if (!enabled || !('speechSynthesis' in window) || !text) return;
+    if (!enabledState || !('speechSynthesis' in window) || !text) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     const o = { ...optionsRef.current, ...(opts || {}) };
@@ -55,5 +83,5 @@ export function useTTS(enabledDefault = true, defaultOptions: TTSOptions = { rat
     optionsRef.current = { ...optionsRef.current, ...opts };
   };
 
-  return { enabled, setEnabled, speak, stop, voices, voice, setVoice, setOptions };
+  return { enabled: enabledState, setEnabled, speak, stop, voices, voice, setVoice, setOptions };
 }
