@@ -55,8 +55,10 @@ export default function Index() {
         description: "Tap here, or say \"Yes\" to begin this activity",
         onClick: () => nav("/modules/feeding/info"),
         action: <ToastAction altText="Begin" onClick={() => nav("/modules/feeding/info")}>Start</ToastAction>,
+        duration: 15000, // Show toast for 15 seconds
+        className: "big-toast",
       });
-      speak(message);
+      // speak(message);
     }, 15000);
     return () => clearTimeout(t);
   }, [nav, speak]);
@@ -116,6 +118,26 @@ export default function Index() {
           box-shadow: 0 0 32px 8px #fffbe6, 0 0 0 8px #ffe066;
           transform: scale(1.08);
           z-index: 40;
+        }
+        .big-toast {
+          min-width: 420px;
+          max-width: 600px;
+          padding: 2.5em 2em;
+          font-size: 1.25rem;
+          border-radius: 1.25em;
+          box-shadow: 0 8px 32px 0 rgba(0,0,0,0.18);
+        }
+        .big-toast .toast-title {
+          font-size: 2rem;
+          font-weight: 700;
+        }
+        .big-toast .toast-description {
+          font-size: 1.25rem;
+          font-weight: 500;
+        }
+        .big-toast button {
+          font-size: 1.1rem;
+          padding: 0.5em 1.5em;
         }
       `}</style>
     </main>

@@ -40,22 +40,16 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         const n = Number(e.newValue);
         if (!isNaN(n)) setVolume(n);
       }
-      if (e.key === "ttsEnabled" && e.newValue != null) {
-        setTtsEnabled(e.newValue !== "false");
-      }
     };
     const onCustom = (e: any) => {
       const n = Number(e.detail?.volume);
       if (!isNaN(n)) setVolume(n);
-      if (typeof e.detail?.ttsEnabled === "boolean") setTtsEnabled(e.detail.ttsEnabled);
     };
     window.addEventListener("storage", onStorage);
     window.addEventListener("global-volume-changed", onCustom as any);
-    window.addEventListener("tts-enabled-changed", onCustom as any);
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("global-volume-changed", onCustom as any);
-      window.removeEventListener("tts-enabled-changed", onCustom as any);
     };
   }, []);
   const updateVolume = (val: number) => {

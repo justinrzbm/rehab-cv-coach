@@ -54,21 +54,21 @@ export function useTTS(enabledDefault = true, defaultOptions: TTSOptions = { rat
     };
   }, []);
 
-  // // Sync with global volume
-  // useEffect(() => {
-  //   const apply = () => {
-  //     const v = Number(localStorage.getItem('globalVolume'));
-  //     const vol = isNaN(v) ? 0.5 : v;
-  //     optionsRef.current = { ...optionsRef.current, volume: vol };
-  //   };
-  //   apply();
-  //   const onCustom = (e: any) => {
-  //     const n = Number(e.detail?.volume);
-  //     if (!isNaN(n)) optionsRef.current = { ...optionsRef.current, volume: n };
-  //   };
-  //   window.addEventListener('global-volume-changed', onCustom as any);
-  //   return () => window.removeEventListener('global-volume-changed', onCustom as any);
-  // }, []);
+  // Sync with global volume
+  useEffect(() => {
+    const apply = () => {
+      const v = Number(localStorage.getItem('globalVolume'));
+      const vol = isNaN(v) ? 0.5 : v;
+      optionsRef.current = { ...optionsRef.current, volume: vol };
+    };
+    apply();
+    const onCustom = (e: any) => {
+      const n = Number(e.detail?.volume);
+      if (!isNaN(n)) optionsRef.current = { ...optionsRef.current, volume: n };
+    };
+    window.addEventListener('global-volume-changed', onCustom as any);
+    return () => window.removeEventListener('global-volume-changed', onCustom as any);
+  }, []);
 
   const setEnabled = (val: boolean) => {
     setEnabledState(val);
