@@ -26,11 +26,6 @@ const ModuleInfo: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showNext, setShowNext] = useState(false);
 
-  // Ensure muted (avoid stray audio from prior pages)
-  useEffect(() => {
-    if (videoRef.current) videoRef.current.muted = true;
-  }, []);
-
   // Reveal Next after 2s of actual playback
   useEffect(() => {
     const vid = videoRef.current;
@@ -45,8 +40,13 @@ const ModuleInfo: React.FC = () => {
   const togglePlay = () => {
     const vid = videoRef.current;
     if (!vid) return;
-    if (isPlaying) vid.pause();
-    else vid.play();
+    if (isPlaying) {
+      vid.pause();
+    } else {
+      // Unmute on user intent, then play
+      vid.muted = false;
+      vid.play();
+    }
   };
 
   return (
@@ -80,7 +80,7 @@ const ModuleInfo: React.FC = () => {
             src={m.video}
             className="w-full h-full object-contain"
             autoPlay
-            muted
+           
             playsInline
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
@@ -97,6 +97,18 @@ const ModuleInfo: React.FC = () => {
             ) : (
               <RotateCcw size={64} className="text-white drop-shadow-lg" />
             )}
+          </button>
+          {/* Mute/Unmute button */}
+          <button
+            onClick={() => {
+              const vid = videoRef.current;
+              if (!vid) return;
+              vid.muted = !vid.muted;
+            }}
+            className="absolute top-3 right-3 bg-white/85 hover:bg-white text-black text-sm font-medium rounded-lg px-3 py-1.5 shadow"
+            aria-label="Toggle mute"
+          >
+            {videoRef.current?.muted ? "Unmute" : "Mute"}
           </button>
         </div>
 
