@@ -6,3 +6,6 @@ sqlmodel
 sqlalchemy
 aiosqlite
 python-multipart
+ultralytics
+mediapipe
+streamlit

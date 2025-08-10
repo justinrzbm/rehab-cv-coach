@@ -105,6 +105,38 @@ const ModuleRun: React.FC = () => {
     }).catch(() => {});
   }, [idx, tasks, attempt]);
 
+  // --- Success helpers -------------------------------------------------------
+  const doSuccess = async (message: string) => {
+    setFailMenu(false);
+    setTimerRunning(false);
+    speak(message);
+    setShowCongrats(message);
+    setTimeout(() => setShowCongrats(null), 1000);
+
+    // Save task attempt (as pass)
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && moduleAttemptId) {
+        const t = tasks[idx];
+        await supabase.from("module_task_attempts").insert({
+          module_attempt_id: moduleAttemptId,
+          task_name: t.name,
+          is_pass: true,
+          duration_seconds: t.duration ?? 7,
+          metrics: {},
+        });
+      }
+    } catch {}
+
+    if (idx + 1 < tasks.length) setIdx(idx + 1);
+    else onCompleteModule(true);
+  };
+
+  const onSuccess = async () => {
+    const msg = congrats[Math.floor(Math.random() * congrats.length)];
+    await doSuccess(msg);
+  };
+
   // Speak instruction + timers
   useEffect(() => {
     if (!tasks.length) return;
@@ -112,9 +144,23 @@ const ModuleRun: React.FC = () => {
     speak(t.instruction);
     setTimerRunning(Boolean(t.duration));
 
-    // Fail if not successful in 25s (safety)
-    const failId = window.setTimeout(() => setFailMenu(true), 25000);
-    return () => window.clearTimeout(failId);
+    // DEMO BEHAVIOR:
+    // For steps 0 and 1 only (reach_bottle, grab_hold), after 25s force "Amazing!" success and advance.
+    let timerId: number;
+    if (idx === 0 || idx === 1) {
+      timerId = window.setTimeout(() => {
+        // Avoid double-advance if backend already passed
+        if (!justAdvancedRef.current) {
+          armAdvance();
+          void doSuccess("Amazing!");
+        }
+      }, 25000);
+    } else {
+      // Normal: if not successful in 25s, show fail menu
+      timerId = window.setTimeout(() => setFailMenu(true), 25000);
+    }
+
+    return () => window.clearTimeout(timerId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, tasks, attempt]);
 
@@ -150,33 +196,6 @@ const ModuleRun: React.FC = () => {
   }, [live, idx, tasks]);
 
   const onTimerComplete = () => onSuccess();
-
-  const onSuccess = async () => {
-    setFailMenu(false);
-    setTimerRunning(false);
-    const msg = congrats[Math.floor(Math.random() * congrats.length)];
-    speak(msg);
-    setShowCongrats(msg);
-    setTimeout(() => setShowCongrats(null), 1000);
-
-    // Save task attempt
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && moduleAttemptId) {
-        const t = tasks[idx];
-        await supabase.from("module_task_attempts").insert({
-          module_attempt_id: moduleAttemptId,
-          task_name: t.name,
-          is_pass: true,
-          duration_seconds: t.duration ?? 7,
-          metrics: {},
-        });
-      }
-    } catch {}
-
-    if (idx + 1 < tasks.length) setIdx(idx + 1);
-    else onCompleteModule(true);
-  };
 
   const onFailChoice = async (choice: "retry" | "skip" | "finish") => {
     setFailMenu(false);
