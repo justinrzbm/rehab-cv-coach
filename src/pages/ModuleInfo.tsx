@@ -11,7 +11,7 @@ const META: Record<string, { title: string; blurb: string; video: string }> = {
     title: "Feeding",
     blurb:
       "Practice a realistic feeding sequence: holding a cup steady, lifting safely, and controlled tipping. This module focuses on steadiness and smooth motion to reduce spills.",
-    video: "/videos/feeding_demo.mp4",
+    video: "/videos/F8785563-0D18-481F-A8A0-BBB7397EDCC9.mp4",
   },
 };
 

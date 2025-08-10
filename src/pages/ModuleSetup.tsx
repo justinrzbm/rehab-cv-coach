@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useSEO } from "@/hooks/useSEO";
 
 const TUTORIAL_SRC: Record<string, string> = {
-  feeding: "/videos/feeding_demo.mp4",
+  feeding: "/videos/31645F4F-66F2-4347-9E3C-D73241EE24A8.mp4",
 };
 
 const ModuleSetup: React.FC = () => {
