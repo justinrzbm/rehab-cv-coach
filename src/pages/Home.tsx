@@ -52,20 +52,55 @@ const Home: React.FC = () => {
 
   return (
     <main className="min-h-screen relative">
-      <AppHeader mode="home" onExit={() => nav("/" /* could route to landing */)} onHelp={() => { setHelp(true); setHelpStep(0); }} />
+      {/* Utility bar with divider line */}
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-muted">
+        <AppHeader
+          mode="home"
+          onExit={() => nav("/" /* could route to landing */)}
+          onHelp={() => { setHelp(true); setHelpStep(0); }}
+        />
+      </div>
 
       <section className="container mx-auto pt-6 md:pt-10">
         <Hello />
 
-        <div className="mt-10 flex items-center justify-center gap-4 md:gap-10">
-          <SelectableCard Icon={BookOpen} label="Modules" colorVar="--accent-modules" primed={primed === "modules"} onClick={() => onCardClick("modules")} large />
-          <SelectableCard Icon={Dumbbell} label="Exercises" colorVar="--accent-exercises" primed={primed === "exercises"} onClick={() => onCardClick("exercises")} large />
-          <SelectableCard Icon={LineChart} label="Progress" colorVar="--accent-progress" primed={primed === "progress"} onClick={() => onCardClick("progress")} large />
+        {/* Big 3 buttons */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 justify-items-center items-stretch">
+          <div className="w-full max-w-md scale-[1.15] md:scale-[1.25]">
+            <SelectableCard
+              Icon={BookOpen}
+              label="Modules"
+              colorVar="--accent-modules"
+              primed={primed === "modules"}
+              onClick={() => onCardClick("modules")}
+              large
+            />
+          </div>
+          <div className="w-full max-w-md scale-[1.15] md:scale-[1.25]">
+            <SelectableCard
+              Icon={Dumbbell}
+              label="Exercises"
+              colorVar="--accent-exercises"
+              primed={primed === "exercises"}
+              onClick={() => onCardClick("exercises")}
+              large
+            />
+          </div>
+          <div className="w-full max-w-md scale-[1.15] md:scale-[1.25]">
+            <SelectableCard
+              Icon={LineChart}
+              label="Progress"
+              colorVar="--accent-progress"
+              primed={primed === "progress"}
+              onClick={() => onCardClick("progress")}
+              large
+            />
+          </div>
         </div>
 
         {primed && !help && (
           <div className="fixed inset-0 z-30" onClick={clearPrimed}>
-            <div className="absolute inset-0 bg-black/85" style={{ backgroundColor: "rgba(0,0,0,0.85)" }} />
+            <div className="absolute inset-0 bg-black/85" />
           </div>
         )}
 

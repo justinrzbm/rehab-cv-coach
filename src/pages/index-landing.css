@@ -97,3 +97,59 @@
   .main-row { flex-direction: column; gap: 2rem; }
   .main-card { width: 100%; min-width: 0; }
 }
+
+/* === Added for util bar + large buttons takeover (2025-08-10) === */
+
+/* Utility bar (top) */
+.util-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Cards row takeover layout */
+.main-row.takeover {
+  min-height: clamp(420px, 60vh, 760px);
+  max-width: 1200px;
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(260px, 1fr));
+  gap: 2rem;
+  align-items: stretch;
+  justify-items: stretch;
+}
+
+/* Item wrapper to scale cards up */
+.takeover-item {
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  transform-origin: center;
+  transform: scale(1.15);
+}
+@media (min-width: 900px) {
+  .takeover-item { transform: scale(1.25); }
+}
+
+/* Try to make cards visibly larger and comfy */
+.label {
+  font-size: clamp(1.6rem, 2.4vw, 2.4rem);
+  font-weight: 700;
+}
+.icon svg {
+  width: clamp(40px, 6vw, 80px);
+  height: clamp(40px, 6vw, 80px);
+}
+
+/* Mobile stack */
+@media (max-width: 900px) {
+  .main-row.takeover {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    min-height: auto;
+  }
+}

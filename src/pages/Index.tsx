@@ -77,12 +77,16 @@ export default function Index() {
   return (
     <main id="landing-root" className="min-h-screen" style={{ background: "hsl(var(--muted) / 0.08)" }}>
       {/* Header */}
+      <div className="util-bar">
+
       <AppHeader
         mode="home"
         title="Handelit Home"
         onExit={() => console.log("Exit")}
         onHelp={() => { runHelp(); }}
       />
+
+      </div>
 
 
       {/* Greeting */}
@@ -94,32 +98,38 @@ export default function Index() {
       </h1>
 
       {/* Cards */}
-      <section className="main-row">
-        <SelectableCard
+      <section className="main-row takeover">
+        <div className="takeover-item">
+          <SelectableCard
           Icon={BookOpen}
           label="Rehab Activities"
           colorVar="--accent-modules"
           primed={helpStep === 0}
           onClick={() => nav("/modules")}
-        />
-        <SelectableCard
+          large/>
+        </div>
+        <div className="takeover-item">
+          <SelectableCard
           Icon={Dumbbell}
           label="Training Games"
           colorVar="--accent-exercises"
           primed={helpStep === 1}
           onClick={() => nav("/exercises")}
-        />
-        <SelectableCard
+          large/>
+        </div>
+        <div className="takeover-item">
+          <SelectableCard
           Icon={LineChart}
           label="Progress"
           colorVar="--accent-progress"
           primed={helpStep === 2}
           onClick={() => nav("/progress")}
-        />
+          large/>
+        </div>
       </section>
       {/* Help description text */}
       {helpStep !== null && (
-        <div style={{ position: "absolute", top: 80, left: 0, right: 0, textAlign: "center", fontSize: 24, fontWeight: 600, color: "#222", zIndex: 10 }}>
+        <div style={{ position: "absolute", top: 88, left: 0, right: 0, textAlign: "center", fontSize: 24, fontWeight: 600, color: "#222", zIndex: 10 }}>
           {HELP_SEQUENCE[helpStep].desc}
         </div>
       )}
