@@ -13,6 +13,7 @@ const EXERCISES = [
   { key: "fruitninja", label: "Fruit Ninja", Icon: Dumbbell, desc: "Fruit Ninja: Slice the fruit by moving your hand quickly." },
   { key: "starshooter", label: "Star Shooter", Icon: Dumbbell, desc: "Star Shooter: Point and shoot at the stars to score points." },
   { key: "flappyball", label: "Flappy Ball", Icon: Dumbbell, desc: "Flappy Ball: Move your hand up and down to keep the ball in the air." },
+  { key: "screencleaner", label: "Screen Cleaner", Icon: Dumbbell, desc: "oh yeah" },
 ];
 
 
@@ -32,7 +33,7 @@ const ExercisesPage: React.FC = () => {
       setHelpStep(i);
       stop();
       speak(EXERCISES[i].desc);
-      await new Promise((res) => setTimeout(res, 2200));
+      await new Promise((res) => setTimeout(res, 5000));
     }
     setHelpStep(null);
   };
@@ -43,7 +44,7 @@ const ExercisesPage: React.FC = () => {
   }, []);
 
   return (
-    <main className="min-h-screen" style={{ background: "hsl(var(--accent-exercises) / 0.06)" }}>
+    <main className="min-h-screen" style={{ background: "hsl(var(--accent-exercises) / 0.08)" }}>
       <AppHeader mode="page" title="Training Games" centerIcon={<Dumbbell />} onBack={() => nav("/")} onHelp={runHelp} accentVar="--accent-exercises" />
 
       <section className="container mx-auto pt-6">

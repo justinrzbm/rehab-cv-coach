@@ -16,13 +16,13 @@ const ExerciseRun: React.FC = () => {
   const { toast } = useToast();
 
   const onAttemptComplete = async (m: AttemptMetrics) => {
+    const successful_reps = Math.round((m.reps || 0) * (m.successRate || 0) / 100);
+    const total_reps = m.reps || 0;
     const res = await saveExerciseAttempt({
       exercise_name: slug!,
-      duration_seconds: m.durationSeconds,
-      rom: m.rom,
-      successful_reps: m.successfulReps,
-      total_reps: m.totalReps,
-      metrics: { avgSpeed: m.avgSpeed, timeInRangePct: m.timeInRangePct },
+      successful_reps,
+      total_reps,
+      metrics: { avgSpeed: m.avgSpeed, romPercent: m.romPercent, percentInRange: m.percentInRange, successRate: m.successRate },
     });
     if (!res.saved) {
       toast({ title: "Metrics saved locally", description: "Connect Supabase auth to save to cloud." });
@@ -32,7 +32,7 @@ const ExerciseRun: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen" style={{ background: "hsl(var(--accent-exercises) / 0.06)" }}>
+    <main className="min-h-screen" style={{ background: "hsl(var(--accent-exercises) / 0.08)" }}>
       <AppHeader mode="page" title="Exercises" centerIcon={<Dumbbell />} onBack={() => nav(`/exercises/${slug}/info`)} onHelp={() => {}} accentVar="--accent-exercises" />
       <section className="container mx-auto p-4">
         <HandExercise onAttemptComplete={onAttemptComplete} />

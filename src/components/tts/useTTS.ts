@@ -8,7 +8,14 @@ export type TTSOptions = {
 };
 
 export function useTTS(enabledDefault = true, defaultOptions: TTSOptions = { rate: 0.95, pitch: 1, volume: 1, lang: 'en-US' }) {
-  const [enabled, setEnabled] = useState(enabledDefault);
+  const [enabledState, setEnabledState] = useState<boolean>(() => {
+    try {
+      const v = localStorage.getItem('ttsEnabled');
+      return v === null ? enabledDefault : v !== 'false';
+    } catch {
+      return enabledDefault;
+    }
+  });
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [voice, setVoice] = useState<SpeechSynthesisVoice | null>(null);
   const optionsRef = useRef<TTSOptions>(defaultOptions);
@@ -34,17 +41,58 @@ export function useTTS(enabledDefault = true, defaultOptions: TTSOptions = { rat
     };
   }, [voice]);
 
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'ttsEnabled' && e.newValue != null) setEnabledState(e.newValue !== 'false');
+    };
+    const onCustom = (e: any) => setEnabledState(Boolean(e.detail?.enabled));
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('tts-enabled-changed', onCustom as any);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('tts-enabled-changed', onCustom as any);
+    };
+  }, []);
+
+  // Sync with global volume
+  useEffect(() => {
+    const apply = () => {
+      const v = Number(localStorage.getItem('globalVolume'));
+      const vol = isNaN(v) ? 0.5 : v;
+      optionsRef.current = { ...optionsRef.current, volume: vol };
+    };
+    apply();
+    const onCustom = (e: any) => {
+      const n = Number(e.detail?.volume);
+      if (!isNaN(n)) optionsRef.current = { ...optionsRef.current, volume: n };
+    };
+    window.addEventListener('global-volume-changed', onCustom as any);
+    return () => window.removeEventListener('global-volume-changed', onCustom as any);
+  }, []);
+
+  const setEnabled = (val: boolean) => {
+    setEnabledState(val);
+    try {
+      localStorage.setItem('ttsEnabled', String(val));
+      window.dispatchEvent(new CustomEvent('tts-enabled-changed', { detail: { enabled: val } }));
+    } catch {}
+  };
+
   const speak = (text: string, opts?: TTSOptions) => {
-    if (!enabled || !('speechSynthesis' in window) || !text) return;
+    if (!enabledState || !('speechSynthesis' in window) || !text) return;
+    // Stop any current speech and flush the queue immediately
     window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    const o = { ...optionsRef.current, ...(opts || {}) };
-    utter.rate = o.rate ?? 1;
-    utter.pitch = o.pitch ?? 1;
-    utter.volume = o.volume ?? 1;
-    utter.lang = o.lang ?? 'en-US';
-    if (voice) utter.voice = voice;
-    window.speechSynthesis.speak(utter);
+    // Small delay to ensure cancel is processed before speaking new text
+    setTimeout(() => {
+      const utter = new SpeechSynthesisUtterance(text);
+      const o = { ...optionsRef.current, ...(opts || {}) };
+      utter.rate = o.rate ?? 1;
+      utter.pitch = o.pitch ?? 1;
+      utter.volume = o.volume ?? 1;
+      utter.lang = o.lang ?? 'en-US';
+      if (voice) utter.voice = voice;
+      window.speechSynthesis.speak(utter);
+    }, 0);
   };
 
   const stop = () => {
@@ -55,5 +103,5 @@ export function useTTS(enabledDefault = true, defaultOptions: TTSOptions = { rat
     optionsRef.current = { ...optionsRef.current, ...opts };
   };
 
-  return { enabled, setEnabled, speak, stop, voices, voice, setVoice, setOptions };
+  return { enabled: enabledState, setEnabled, speak, stop, voices, voice, setVoice, setOptions };
 }

@@ -24,7 +24,7 @@ const ProgressDetail: React.FC = () => {
   }, [activity]);
 
   return (
-    <main className="min-h-screen" style={{ background: "hsl(var(--accent-progress) / 0.06)" }}>
+    <main className="min-h-screen" style={{ background: "hsl(var(--accent-progress) / 0.08)" }}>
       <AppHeader mode="page" title="Progress" centerIcon={<LineChart />} onBack={() => nav('/progress')} onHelp={() => {}} accentVar="--accent-progress" />
 
       <section className="container mx-auto p-6">

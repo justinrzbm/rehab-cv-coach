@@ -1,7 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { AppHeader } from "@/components/layout/AppHeader";
-import { Dumbbell } from "lucide-react";
 import { Hands } from "@mediapipe/hands";
 import { Camera } from "@mediapipe/camera_utils";
 
@@ -53,23 +51,11 @@ const FruitNinja: React.FC = () => {
     window.location.reload();
   };
 
-  const handleBack = useCallback(() => {
-
-      // Ensure complete cleanup before navigation
-    if (cameraRef.current) {
-      cameraRef.current.stop();
-      cameraRef.current = null;
-    }
-    if (handsRef.current) {
-      handsRef.current.close();
-      handsRef.current = null;
-    }
-      
-      // Small delay to ensure cleanup completes
-    setTimeout(() => {
-      navigate("/exercises");
-    }, 100);
-  }, [navigate]);
+  const handleBack = () => {
+    cameraRef.current?.stop();
+    handsRef.current?.close();
+    navigate("/exercises");
+  };
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -171,28 +157,6 @@ const FruitNinja: React.FC = () => {
       className="min-h-screen flex flex-col items-center justify-center"
       style={{ background: "hsl(var(--accent-exercises) / 0.06)" }}
     >
-      <AppHeader
-        mode="page"
-        title="Fruit Ninja"
-        centerIcon={<Dumbbell />}
-        onBack={handleBack}
-        accentVar="--accent-exercises"
-      />
-      {/* <div style={{ position: "fixed", top: 80, left: 24, zIndex: 10 }}>
-        <button
-          onClick={handleRestart}
-          className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow"
-        >
-          Restart
-        </button>
-      </div> */}
-
-      {/* Title and score */}
-      <header className="w-full flex items-center justify-center px-8 py-4">
-        <div className="absolute right-8 text-xl font-bold text-gray-800 bg-white px-4 py-2 rounded-lg shadow">
-          Score: {displayedScore}
-        </div>
-      </header>
 
       <section className="flex flex-col items-center justify-center gap-6 w-full">
         <div className="rounded-xl overflow-hidden bg-card aspect-video flex items-center justify-center">
