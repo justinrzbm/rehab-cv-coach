@@ -80,15 +80,19 @@ export function useTTS(enabledDefault = true, defaultOptions: TTSOptions = { rat
 
   const speak = (text: string, opts?: TTSOptions) => {
     if (!enabledState || !('speechSynthesis' in window) || !text) return;
+    // Stop any current speech and flush the queue immediately
     window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    const o = { ...optionsRef.current, ...(opts || {}) };
-    utter.rate = o.rate ?? 1;
-    utter.pitch = o.pitch ?? 1;
-    utter.volume = o.volume ?? 1;
-    utter.lang = o.lang ?? 'en-US';
-    if (voice) utter.voice = voice;
-    window.speechSynthesis.speak(utter);
+    // Small delay to ensure cancel is processed before speaking new text
+    setTimeout(() => {
+      const utter = new SpeechSynthesisUtterance(text);
+      const o = { ...optionsRef.current, ...(opts || {}) };
+      utter.rate = o.rate ?? 1;
+      utter.pitch = o.pitch ?? 1;
+      utter.volume = o.volume ?? 1;
+      utter.lang = o.lang ?? 'en-US';
+      if (voice) utter.voice = voice;
+      window.speechSynthesis.speak(utter);
+    }, 0);
   };
 
   const stop = () => {

@@ -1,5 +1,15 @@
 // src/pages/Index.tsx
 
+// Ensure TTS and volume are ON by default before any React code runs
+if (typeof window !== 'undefined') {
+  if (localStorage.getItem('ttsEnabled') === null) {
+    localStorage.setItem('ttsEnabled', 'true');
+  }
+  if (localStorage.getItem('globalVolume') === null) {
+    localStorage.setItem('globalVolume', '0.5');
+  }
+}
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTTS } from "@/components/tts/useTTS";
@@ -18,16 +28,6 @@ const HELP_SEQUENCE = [
 ];
 
 export default function Index() {
-  // Ensure TTS is ON by default on app launch
-  useEffect(() => {
-    if (localStorage.getItem('ttsEnabled') === null) {
-      localStorage.setItem('ttsEnabled', 'true');
-    }
-    if (localStorage.getItem('globalVolume') === null) {
-      localStorage.setItem('globalVolume', '0.5');
-    }
-  }, []);
-
   const [showGreeting, setShowGreeting] = useState(false);
   const [helpStep, setHelpStep] = useState<number | null>(null);
   const userName = "Justin"; // TODO: wire to real user state
