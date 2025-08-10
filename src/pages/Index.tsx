@@ -47,6 +47,7 @@ export default function Index() {
 
   // Suggested activity toast after 15s
   useEffect(() => {
+    if (window.location.pathname !== "/" && window.location.pathname !== "/index" && window.location.pathname !== "/index.html") return;
     const t = setTimeout(() => {
       const message = "Suggested: would you like to try the Feeding activity? Tap here, or say \"Yes\" to begin this activity";
       toast({
@@ -62,7 +63,7 @@ export default function Index() {
 
 
   return (
-    <main id="landing-root">
+    <main id="landing-root" className="w-full min-h-screen bg-background">
       {/* Header */}
       <AppHeader
         mode="home"
