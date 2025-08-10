@@ -1,8 +1,9 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import type { LucideProps } from "lucide-react";
 
 interface SelectableCardProps {
-  Icon: React.ComponentType<{ size?: number; className?: string }>;
+  Icon: React.ComponentType<LucideProps>;
   label: string;
   colorVar: string; // e.g. --accent-modules
   primed?: boolean; // first click selected
@@ -17,7 +18,7 @@ export const SelectableCard: React.FC<SelectableCardProps> = ({ Icon, label, col
     <button
       onClick={onClick}
       className={cn(
-        "rounded-2xl p-6 md:p-8 min-w-[160px] md:min-w-[220px] aspect-square flex flex-col items-center justify-center gap-4 transition-all duration-200",
+        "rounded-2xl p-6 md:p-8 w-[160px] md:w-[220px] aspect-square flex flex-col items-center justify-center gap-4 transition-all duration-200",
         "hover:shadow-xl hover-scale",
         primed ? "scale-105" : "",
         selected ? "scale-110" : ""
@@ -28,7 +29,7 @@ export const SelectableCard: React.FC<SelectableCardProps> = ({ Icon, label, col
         boxShadow: primed || selected ? `0 0 0 12px hsl(var(--glow-yellow) / 0.35)` : undefined,
       }}
     >
-      <Icon size={large ? 80 : 64} className="" />
+      <Icon size={large ? 80 : 64} />
       <div className="text-xl md:text-2xl font-semibold" style={{ color }}>{label}</div>
     </button>
   );

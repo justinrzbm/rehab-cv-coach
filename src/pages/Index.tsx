@@ -20,23 +20,24 @@ export default function Index() {
   const nav = useNavigate();
   const { speak, stop } = useTTS(true);
 
-  // On mount, play help sequence
-  useEffect(() => {
+// On mount, and helper to replay, play help sequence
+  const runHelp = async () => {
     setShowGreeting(false);
     let mounted = true;
-    const runHelp = async () => {
-      for (let i = 0; i < HELP_SEQUENCE.length; ++i) {
-        if (!mounted) return;
-        setHelpStep(i);
-        stop();
-        speak(HELP_SEQUENCE[i].desc);
-        await new Promise((res) => setTimeout(res, 2200));
-      }
-      setHelpStep(null);
-      setShowGreeting(true); // Show greeting after help sequence
-    };
-    runHelp();
+    for (let i = 0; i < HELP_SEQUENCE.length; ++i) {
+      if (!mounted) return;
+      setHelpStep(i);
+      stop();
+      speak(HELP_SEQUENCE[i].desc);
+      await new Promise((res) => setTimeout(res, 4000));
+    }
+    setHelpStep(null);
+    setShowGreeting(true);
     return () => { mounted = false; stop(); };
+  };
+
+  useEffect(() => {
+    runHelp();
     // eslint-disable-next-line
   }, []);
 
@@ -56,10 +57,7 @@ export default function Index() {
         <button
           className="header-btn"
           aria-label="Help"
-          onClick={() => {
-            setHelpStep(0);
-            setShowGreeting(false);
-          }}
+          onClick={() => { runHelp(); }}
         >
           <span className="material-icons" style={{ fontSize: 40 }}>
             help_outline

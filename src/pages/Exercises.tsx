@@ -33,7 +33,7 @@ const ExercisesPage: React.FC = () => {
       setHelpStep(i);
       stop();
       speak(EXERCISES[i].desc);
-      await new Promise((res) => setTimeout(res, 2200));
+      await new Promise((res) => setTimeout(res, 4000));
     }
     setHelpStep(null);
   };
@@ -44,7 +44,7 @@ const ExercisesPage: React.FC = () => {
   }, []);
 
   return (
-    <main className="min-h-screen" style={{ background: "hsl(var(--accent-exercises) / 0.06)" }}>
+    <main className="min-h-screen" style={{ background: "hsl(var(--accent-exercises) / 0.08)" }}>
       <AppHeader mode="page" title="Training Games" centerIcon={<Dumbbell />} onBack={() => nav("/")} onHelp={runHelp} accentVar="--accent-exercises" />
 
       <section className="container mx-auto pt-6">

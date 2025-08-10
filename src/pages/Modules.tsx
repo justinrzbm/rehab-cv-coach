@@ -24,7 +24,7 @@ const ModulesPage: React.FC = () => {
       setHelpStep(i);
       stop();
       speak(MODULES[i].desc);
-      await new Promise((res) => setTimeout(res, 2200));
+      await new Promise((res) => setTimeout(res, 4000));
     }
     setHelpStep(null);
   };
@@ -34,7 +34,7 @@ const ModulesPage: React.FC = () => {
     // eslint-disable-next-line
   }, []);
   return (
-    <main className="min-h-screen" style={{ background: "hsl(var(--accent-modules) / 0.06)" }}>
+    <main className="min-h-screen" style={{ background: "hsl(var(--accent-modules) / 0.08)" }}>
       <AppHeader
         mode="page"
         title="Rehab Activities"
