@@ -16,103 +16,88 @@ export type Database = {
     Tables: {
       exercise_attempts: {
         Row: {
-          created_at: string
-          data: Json | null
-          duration_seconds: number | null
-          exercise_name: string
-          id: string
-          improvement_rom: boolean | null
-          improvement_speed: boolean | null
-          improvement_success_rate: boolean | null
-          metrics: Json | null
-          rom: number | null
-          success_rate: number | null
-          successful_reps: number | null
-          total_reps: number | null
-          user_id: string
-        }
+          id: string;
+          created_at: string;
+          user_id: string;
+          exercise_name: string;
+          successful_reps: number | null;
+          total_reps: number | null;
+          metrics: Json | null;
+          image_data: string | null;
+        };
         Insert: {
-          created_at?: string
-          data?: Json | null
-          duration_seconds?: number | null
-          exercise_name: string
-          id?: string
-          improvement_rom?: boolean | null
-          improvement_speed?: boolean | null
-          improvement_success_rate?: boolean | null
-          metrics?: Json | null
-          rom?: number | null
-          success_rate?: number | null
-          successful_reps?: number | null
-          total_reps?: number | null
-          user_id: string
-        }
+          id?: string;
+          created_at?: string;
+          user_id: string;
+          exercise_name: string;
+          successful_reps?: number | null;
+          total_reps?: number | null;
+          metrics?: Json | null;
+          image_data?: string | null;
+        };
         Update: {
-          created_at?: string
-          data?: Json | null
-          duration_seconds?: number | null
-          exercise_name?: string
-          id?: string
-          improvement_rom?: boolean | null
-          improvement_speed?: boolean | null
-          improvement_success_rate?: boolean | null
-          metrics?: Json | null
-          rom?: number | null
-          success_rate?: number | null
-          successful_reps?: number | null
-          total_reps?: number | null
-          user_id?: string
-        }
+          id?: string;
+          created_at?: string;
+          user_id?: string;
+          exercise_name?: string;
+          successful_reps?: number | null;
+          total_reps?: number | null;
+          metrics?: Json | null;
+          image_data?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "exercise_attempts_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "exercise_attempts_user_id_fkey",
+            columns: ["user_id"],
+            isOneToOne: false,
+            referencedRelation: "profiles",
+            referencedColumns: ["id"],
           },
-        ]
+        ];
       }
       module_attempts: {
         Row: {
-          created_at: string
-          data: Json | null
-          duration_seconds: number | null
-          id: string
-          is_completed: boolean
-          metrics: Json | null
-          module_name: string
-          user_id: string
-        }
+          id: string;
+          created_at: string;
+          user_id: string;
+          module_name: string;
+          module_is_completed: boolean;
+          subtasks_succeeded: number;
+          duration_seconds: number | null;
+          metrics: Json | null;
+          data: Json | null;
+        };
         Insert: {
-          created_at?: string
-          data?: Json | null
-          duration_seconds?: number | null
-          id?: string
-          is_completed?: boolean
-          metrics?: Json | null
-          module_name: string
-          user_id: string
-        }
+          id?: string;
+          created_at?: string;
+          user_id: string;
+          module_name: string;
+          module_is_completed?: boolean;
+          subtasks_succeeded?: number;
+          duration_seconds?: number | null;
+          metrics?: Json | null;
+          data?: Json | null;
+        };
         Update: {
-          created_at?: string
-          data?: Json | null
-          duration_seconds?: number | null
-          id?: string
-          is_completed?: boolean
-          metrics?: Json | null
-          module_name?: string
-          user_id?: string
-        }
+          id?: string;
+          created_at?: string;
+          user_id?: string;
+          module_name?: string;
+          module_is_completed?: boolean;
+          subtasks_succeeded?: number;
+          duration_seconds?: number | null;
+          metrics?: Json | null;
+          data?: Json | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "module_attempts_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "module_attempts_user_id_fkey",
+            columns: ["user_id"],
+            isOneToOne: false,
+            referencedRelation: "profiles",
+            referencedColumns: ["id"],
           },
-        ]
+        ];
       }
       module_task_attempts: {
         Row: {
@@ -157,30 +142,30 @@ export type Database = {
       }
       profiles: {
         Row: {
-          avatar_url: string | null
-          created_at: string
-          full_name: string | null
-          id: string
-          updated_at: string
-          username: string | null
-        }
+          id: string;
+          created_at: string;
+          updated_at: string;
+          username: string | null;
+          full_name: string | null;
+          avatar_url: string | null;
+        };
         Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          full_name?: string | null
-          id: string
-          updated_at?: string
-          username?: string | null
-        }
+          id: string;
+          created_at?: string;
+          updated_at?: string;
+          username?: string | null;
+          full_name?: string | null;
+          avatar_url?: string | null;
+        };
         Update: {
-          avatar_url?: string | null
-          created_at?: string
-          full_name?: string | null
-          id?: string
-          updated_at?: string
-          username?: string | null
-        }
-        Relationships: []
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          username?: string | null;
+          full_name?: string | null;
+          avatar_url?: string | null;
+        };
+        Relationships: [];
       }
     }
     Views: {
