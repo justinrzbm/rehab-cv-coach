@@ -157,41 +157,6 @@ const FruitNinja: React.FC = () => {
       className="min-h-screen flex flex-col items-center justify-center"
       style={{ background: "hsl(var(--accent-exercises) / 0.06)" }}
     >
-      {/* Top-left buttons */}
-      <div
-        style={{
-          position: "fixed",
-          top: 24,
-          left: 24,
-          zIndex: 10,
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-        }}
-      >
-        <button
-          onClick={handleBack}
-          className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold shadow"
-        >
-          ← Back
-        </button>
-        <button
-          onClick={handleRestart}
-          className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow"
-        >
-          Restart
-        </button>
-      </div>
-
-      {/* Title and score */}
-      <header className="w-full flex items-center justify-center px-8 py-4">
-        <div className="text-2xl font-bold text-orange-600">
-          Fruit Ninja 🥷
-        </div>
-        <div className="absolute right-8 text-xl font-bold text-gray-800 bg-white px-4 py-2 rounded-lg shadow">
-          Score: {displayedScore}
-        </div>
-      </header>
 
       <section className="flex flex-col items-center justify-center gap-6 w-full">
         <div className="rounded-xl overflow-hidden bg-card aspect-video flex items-center justify-center">

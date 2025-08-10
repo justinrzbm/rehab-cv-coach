@@ -53,11 +53,23 @@ const FruitNinja: React.FC = () => {
     window.location.reload();
   };
 
-  const handleBack = () => {
-    cameraRef.current?.stop();
-    handsRef.current?.close();
-    navigate("/exercises");
-  };
+  const handleBack = useCallback(() => {
+
+      // Ensure complete cleanup before navigation
+    if (cameraRef.current) {
+      cameraRef.current.stop();
+      cameraRef.current = null;
+    }
+    if (handsRef.current) {
+      handsRef.current.close();
+      handsRef.current = null;
+    }
+      
+      // Small delay to ensure cleanup completes
+    setTimeout(() => {
+      navigate("/exercises");
+    }, 100);
+  }, [navigate]);
 
   useEffect(() => {
     const videoElement = videoRef.current;

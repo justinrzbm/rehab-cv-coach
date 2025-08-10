@@ -16,6 +16,7 @@ import NotFound from "@/pages/NotFound";
 import StarShooter from "@/pages/StarShooter"
 import FruitNinja from "@/pages/FruitNinja";
 import FlappyBall from "@/pages/FlappyBall";
+import BoardCleanerGame from "@/pages/ScreenCleaner";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/modules/:slug/run" element={<ModuleRun />} />
           <Route path="/exercises" element={<ExercisesPage />} />
           <Route path="/exercises/FlappyBall" element={<FlappyBall />} />
+          <Route path="/exercises/ScreenCleaner" element={<BoardCleanerGame />} />
           <Route path="/exercises/FruitNinja" element={<FruitNinja />} />
           <Route path="/exercises/StarShooter" element={<StarShooter />} />
           <Route path="/progress" element={<ProgressPage />} />

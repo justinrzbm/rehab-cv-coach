@@ -13,6 +13,7 @@ const EXERCISES = [
   { key: "fruitninja", label: "Fruit Ninja", Icon: Dumbbell, desc: "Fruit Ninja: Slice the fruit by moving your hand quickly." },
   { key: "starshooter", label: "Star Shooter", Icon: Dumbbell, desc: "Star Shooter: Point and shoot at the stars to score points." },
   { key: "flappyball", label: "Flappy Ball", Icon: Dumbbell, desc: "Flappy Ball: Move your hand up and down to keep the ball in the air." },
+  { key: "screencleaner", label: "Screen Cleaner", Icon: Dumbbell, desc: "oh yeah" },
 ];
 
 

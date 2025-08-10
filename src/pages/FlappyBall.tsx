@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Dumbbell } from "lucide-react";
@@ -51,11 +51,23 @@ const FlappyBall: React.FC = () => {
 
   // Remove restart button for unified UI
 
-  const handleBack = () => {
-    cameraRef.current?.stop();
-    handsRef.current?.close();
-    navigate("/exercises");
-  };
+  const handleBack = useCallback(() => {
+  
+      // Ensure complete cleanup before navigation
+    if (cameraRef.current) {
+      cameraRef.current.stop();
+      cameraRef.current = null;
+    }
+    if (handsRef.current) {
+      handsRef.current.close();
+      handsRef.current = null;
+    }
+        
+        // Small delay to ensure cleanup completes
+    setTimeout(() => {
+      navigate("/exercises");
+    }, 100);
+  }, [navigate]);
   
   useEffect(() => {
     const videoElement = videoRef.current;

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Dumbbell } from "lucide-react";
@@ -59,10 +59,23 @@ const StarShooter: React.FC = () => {
     gameRef.current.hands?.close();
     gameRef.current.isGameRunning = false;
   };
-  const handleBack = () => {
-    stopGame();
-    navigate("/exercises");
-  };
+  const handleBack = useCallback(() => {
+  
+        // Ensure complete cleanup before navigation
+    if (gameRef.current.camera) {
+      gameRef.current.camera.stop();
+      gameRef.current.camera = null;
+    }
+    if (gameRef.current.hands) {
+      gameRef.current.hands.close();
+      gameRef.current.hands = null;
+    }
+        
+      // Small delay to ensure cleanup completes
+    setTimeout(() => {
+      navigate("/exercises");
+    }, 100);
+  }, [navigate]);
   
   // const handleRestart = () => {
   //   stopGame();
