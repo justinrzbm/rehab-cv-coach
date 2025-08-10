@@ -75,7 +75,7 @@ export default function Index() {
 
 
   return (
-    <main id="landing-root" className="w-full min-h-screen bg-background">
+    <main id="landing-root" className="min-h-screen" style={{ background: "hsl(var(--muted) / 0.08)" }}>
       {/* Header */}
       <AppHeader
         mode="home"
