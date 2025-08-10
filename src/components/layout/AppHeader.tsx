@@ -29,28 +29,44 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     const v = Number(localStorage.getItem("globalVolume"));
     return isNaN(v) ? 0.5 : v;
   });
+  // TTS toggle synced via localStorage + custom event
+  const [ttsEnabled, setTtsEnabled] = useState<boolean>(() => {
+    const v = localStorage.getItem("ttsEnabled");
+    return v === null ? true : v !== "false";
+  });
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === "globalVolume" && e.newValue != null) {
         const n = Number(e.newValue);
         if (!isNaN(n)) setVolume(n);
       }
+      if (e.key === "ttsEnabled" && e.newValue != null) {
+        setTtsEnabled(e.newValue !== "false");
+      }
     };
     const onCustom = (e: any) => {
       const n = Number(e.detail?.volume);
       if (!isNaN(n)) setVolume(n);
+      if (typeof e.detail?.ttsEnabled === "boolean") setTtsEnabled(e.detail.ttsEnabled);
     };
     window.addEventListener("storage", onStorage);
     window.addEventListener("global-volume-changed", onCustom as any);
+    window.addEventListener("tts-enabled-changed", onCustom as any);
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("global-volume-changed", onCustom as any);
+      window.removeEventListener("tts-enabled-changed", onCustom as any);
     };
   }, []);
   const updateVolume = (val: number) => {
     setVolume(val);
     localStorage.setItem("globalVolume", String(val));
     window.dispatchEvent(new CustomEvent("global-volume-changed", { detail: { volume: val } }));
+  };
+  const updateTtsEnabled = (val: boolean) => {
+    setTtsEnabled(val);
+    localStorage.setItem("ttsEnabled", String(val));
+    window.dispatchEvent(new CustomEvent("tts-enabled-changed", { detail: { ttsEnabled: val } }));
   };
 
   return (
