@@ -11,8 +11,8 @@ const ExerciseInfo: React.FC = () => {
   const nav = useNavigate();
 
   return (
-    <main className="min-h-screen" style={{ background: "hsl(var(--accent-exercises) / 0.06)" }}>
-      <AppHeader mode="page" title="Exercises" centerIcon={<Dumbbell />} onBack={() => nav("/exercises")} onHelp={() => {}} accentVar="--accent-exercises" />
+    <main className="min-h-screen" style={{ background: "hsl(var(--accent-games) / 0.06)" }}>
+      <AppHeader mode="page" title="Games" centerIcon={<Dumbbell />} onBack={() => nav("/games")} onHelp={() => {}} accentVar="--accent-games" />
       <section className="container mx-auto p-4">
         <div className="max-w-3xl mx-auto space-y-6">
           <h1 className="text-3xl md:text-4xl font-bold text-center capitalize">{slug} exercise</h1>
@@ -21,7 +21,7 @@ const ExerciseInfo: React.FC = () => {
             <video src="" autoPlay muted loop controls className="w-full aspect-video bg-muted" />
           </div>
           <div className="flex justify-end">
-            <Button onClick={() => nav(`/exercises/${slug}/run`)}>
+            <Button onClick={() => nav(`/games/${slug}/run`)}>
               Begin
             </Button>
           </div>

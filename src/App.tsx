@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Index from "@/pages/Index";
 import ModulesPage from "@/pages/Modules";
-import ExercisesPage from "@/pages/Exercises";
+import GamesPage from "@/pages/Games";
 import ProgressPage from "@/pages/Progress";
 import ModuleInfo from "@/pages/ModuleInfo";      // NEW
 import ModuleSetup from "@/pages/ModuleSetup";    // UPDATED (tutorial)
@@ -32,11 +32,11 @@ const App = () => (
           <Route path="/modules/:slug/info" element={<ModuleInfo />} />
           <Route path="/modules/:slug/setup" element={<ModuleSetup />} />
           <Route path="/modules/:slug/run" element={<ModuleRun />} />
-          <Route path="/exercises" element={<ExercisesPage />} />
-          <Route path="/exercises/FlappyBall" element={<FlappyBall />} />
-          <Route path="/exercises/ScreenCleaner" element={<BoardCleanerGame />} />
-          <Route path="/exercises/FruitNinja" element={<FruitNinja />} />
-          <Route path="/exercises/StarShooter" element={<StarShooter />} />
+          <Route path="/games" element={<GamesPage />} />
+          <Route path="/games/FlappyBall" element={<FlappyBall />} />
+          <Route path="/games/ScreenCleaner" element={<BoardCleanerGame />} />
+          <Route path="/games/FruitNinja" element={<FruitNinja />} />
+          <Route path="/games/StarShooter" element={<StarShooter />} />
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

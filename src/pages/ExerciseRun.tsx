@@ -32,8 +32,8 @@ const ExerciseRun: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen" style={{ background: "hsl(var(--accent-exercises) / 0.08)" }}>
-      <AppHeader mode="page" title="Exercises" centerIcon={<Dumbbell />} onBack={() => nav(`/exercises/${slug}/info`)} onHelp={() => {}} accentVar="--accent-exercises" />
+    <main className="min-h-screen" style={{ background: "hsl(var(--accent-games) / 0.08)" }}>
+      <AppHeader mode="page" title="Games" centerIcon={<Dumbbell />} onBack={() => nav(`/games/${slug}/info`)} onHelp={() => {}} accentVar="--accent-games" />
       <section className="container mx-auto p-4">
         <HandExercise onAttemptComplete={onAttemptComplete} />
       </section>

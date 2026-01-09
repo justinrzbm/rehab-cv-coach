@@ -9,7 +9,7 @@ import { useTTS } from "@/components/tts/useTTS";
 import { SelectableCard } from "@/components/common/SelectableCard";
 
 
-const EXERCISES = [
+const GAMES = [
   { key: "fruitninja", label: "Fruit Ninja", Icon: Dumbbell, desc: "Fruit Ninja: Slice the fruit by moving your hand quickly." },
   { key: "starshooter", label: "Star Shooter", Icon: Dumbbell, desc: "Star Shooter: Point and shoot at the stars to score points." },
   { key: "flappyball", label: "Flappy Ball", Icon: Dumbbell, desc: "Flappy Ball: Move your hand up and down to keep the ball in the air." },
@@ -18,8 +18,8 @@ const EXERCISES = [
 
 
 
-const ExercisesPage: React.FC = () => {
-  useSEO("Rehab Coach – Training Games", "Pick a single exercise to practice with tracking and voice.");
+const GamesPage: React.FC = () => {
+  useSEO("Rehab Coach – Training Games", "Pick a game to practice with tracking and voice.");
   const nav = useNavigate();
   const { speak, stop } = useTTS(true);
 
@@ -29,10 +29,10 @@ const ExercisesPage: React.FC = () => {
   // Help sequence logic
 
   const runHelp = async () => {
-    for (let i = 0; i < EXERCISES.length; ++i) {
+    for (let i = 0; i < GAMES.length; ++i) {
       setHelpStep(i);
       stop();
-      speak(EXERCISES[i].desc);
+      speak(GAMES[i].desc);
       await new Promise((res) => setTimeout(res, 5000));
     }
     setHelpStep(null);
@@ -44,26 +44,26 @@ const ExercisesPage: React.FC = () => {
   }, []);
 
   return (
-    <main className="min-h-screen" style={{ background: "hsl(var(--accent-exercises) / 0.08)" }}>
-      <AppHeader mode="page" title="Training Games" centerIcon={<Dumbbell />} onBack={() => nav("/")} onHelp={runHelp} accentVar="--accent-exercises" />
+    <main className="min-h-screen" style={{ background: "hsl(var(--accent-games) / 0.08)" }}>
+      <AppHeader mode="page" title="Training Games" centerIcon={<Dumbbell />} onBack={() => nav("/")} onHelp={runHelp} accentVar="--accent-games" />
 
       <section className="container mx-auto pt-6">
         {/* Help description text */}
         {helpStep !== null && (
           <div style={{ minHeight: 48, marginBottom: 32, textAlign: "center", fontSize: 24, fontWeight: 600, color: "#222", zIndex: 10 }}>
-            {EXERCISES[helpStep].desc}
+            {GAMES[helpStep].desc}
           </div>
         )}
         {helpStep === null && <div style={{ minHeight: 48, marginBottom: 32 }} />}
         <div className="flex items-center justify-center gap-6 md:gap-10">
-          {EXERCISES.map((ex, i) => (
+          {GAMES.map((ex, i) => (
             <SelectableCard
               key={ex.key}
               Icon={ex.Icon}
               label={ex.label}
-              colorVar="--accent-exercises"
+              colorVar="--accent-games"
               primed={helpStep === i}
-              onClick={() => nav(`/exercises/${ex.key}`)}
+              onClick={() => nav(`/games/${ex.key}`)}
             />
           ))}
         </div>
@@ -80,4 +80,4 @@ const ExercisesPage: React.FC = () => {
   );
 };
 
-export default ExercisesPage;
+export default GamesPage;

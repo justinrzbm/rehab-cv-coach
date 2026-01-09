@@ -112,9 +112,9 @@ export default function Index() {
           <SelectableCard
           Icon={Dumbbell}
           label="Training Games"
-          colorVar="--accent-exercises"
+          colorVar="--accent-games"
           primed={helpStep === 1}
-          onClick={() => nav("/exercises")}
+          onClick={() => nav("/games")}
           large/>
         </div>
         <div className="takeover-item">

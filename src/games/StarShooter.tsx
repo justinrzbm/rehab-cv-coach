@@ -75,7 +75,7 @@ const StarShooter: React.FC = () => {
   
   const handleBack = () => {
     stopGame();
-    navigate("/exercises");
+    navigate("/games");
   };
 
   useEffect(() => {

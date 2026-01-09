@@ -67,7 +67,7 @@ const FruitNinja: React.FC = () => {
       
       // Small delay to ensure cleanup completes
     setTimeout(() => {
-      navigate("/exercises");
+      navigate("/games");
     }, 100);
   }, [navigate]);
 
@@ -169,14 +169,14 @@ const FruitNinja: React.FC = () => {
   return (
     <main
       className="min-h-screen flex flex-col items-center justify-center"
-      style={{ background: "hsl(var(--accent-exercises) / 0.06)" }}
+      style={{ background: "hsl(var(--accent-games) / 0.06)" }}
     >
       <AppHeader
         mode="page"
         title="Fruit Ninja"
         centerIcon={<Dumbbell />}
         onBack={handleBack}
-        accentVar="--accent-exercises"
+        accentVar="--accent-games"
       />
       {/* <div style={{ position: "fixed", top: 80, left: 24, zIndex: 10 }}>
         <button

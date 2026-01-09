@@ -243,7 +243,7 @@ const ModuleRun: React.FC = () => {
           .eq("id", moduleAttemptId);
       }
     } catch {}
-    if (goExercises) nav("/exercises");
+    if (goExercises) nav("/games");
     else nav("/modules");
   };
 

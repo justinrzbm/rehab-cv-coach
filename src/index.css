@@ -56,7 +56,7 @@ All colors MUST be HSL.
 
     /* App section accents (HSL) */
     --accent-modules: 327 45% 64%;   /* #CC79A7 */
-    --accent-exercises: 202 100% 35%;/* #0072B2 */
+    --accent-games: 202 100% 35%;/* #0072B2 */
     --accent-progress: 156 100% 31%; /* #009E5F */
 
     /* Effects */

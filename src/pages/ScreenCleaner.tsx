@@ -96,7 +96,7 @@ const ScreenCleaner: React.FC = () => {
     
     // Small delay to ensure cleanup completes
     setTimeout(() => {
-      navigate("/exercises");
+      navigate("/games");
     }, 100);
   }, [navigate]);
 
@@ -250,14 +250,14 @@ const ScreenCleaner: React.FC = () => {
   return (
     <main
       className="min-h-screen flex flex-col items-center justify-center"
-      style={{ background: "hsl(var(--accent-exercises) / 0.06)" }}
+      style={{ background: "hsl(var(--accent-games) / 0.06)" }}
     >
       <AppHeader
         mode="page"
         title="Screen Cleaner"
         centerIcon={<Dumbbell />}
         onBack={handleBack}
-        accentVar="--accent-exercises"
+        accentVar="--accent-games"
       />
       
       {/* Title and score */}

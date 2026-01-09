@@ -54,7 +54,7 @@ const FruitNinja: React.FC = () => {
   const handleBack = () => {
     cameraRef.current?.stop();
     handsRef.current?.close();
-    navigate("/exercises");
+    navigate("/games");
   };
 
   useEffect(() => {
@@ -155,7 +155,7 @@ const FruitNinja: React.FC = () => {
   return (
     <main
       className="min-h-screen flex flex-col items-center justify-center"
-      style={{ background: "hsl(var(--accent-exercises) / 0.06)" }}
+      style={{ background: "hsl(var(--accent-games) / 0.06)" }}
     >
 
       <section className="flex flex-col items-center justify-center gap-6 w-full">

@@ -73,7 +73,7 @@ const StarShooter: React.FC = () => {
         
       // Small delay to ensure cleanup completes
     setTimeout(() => {
-      navigate("/exercises");
+      navigate("/games");
     }, 100);
   }, [navigate]);
   
@@ -238,7 +238,7 @@ const StarShooter: React.FC = () => {
         title="Star Shooter"
         centerIcon={<Dumbbell />}
         onBack={handleBack}
-        accentVar="--accent-exercises"
+        accentVar="--accent-games"
       />
       <div className="w-full flex flex-col items-center mt-2">
         <div className="text-2xl font-bold text-orange-600 mb-2">Score: {score}</div>

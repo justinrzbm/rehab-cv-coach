@@ -20,7 +20,7 @@ const Home: React.FC = () => {
   const nav = useNavigate();
   const { speak } = useTTS(true);
 
-  const [primed, setPrimed] = useState<"modules" | "exercises" | "progress" | null>(null);
+  const [primed, setPrimed] = useState<"modules" | "games" | "progress" | null>(null);
   const [help, setHelp] = useState(false);
   const [helpStep, setHelpStep] = useState(0);
 
@@ -28,18 +28,18 @@ const Home: React.FC = () => {
     if (help) {
       const msgs = [
         "Modules: Step-by-step daily activities like feeding and brushing.",
-        "Exercises: Focused single movements to practice and improve.",
+        "Games: Focused single movements to practice and improve.",
         "Progress: See your improvements and celebrate wins!",
       ];
       speak(msgs[helpStep]);
     }
   }, [help, helpStep, speak]);
 
-  const onCardClick = (key: "modules" | "exercises" | "progress") => {
+  const onCardClick = (key: "modules" | "games" | "progress") => {
     if (help) return; // ignore interactions during help
     if (primed === key) {
       if (key === "modules") nav("/modules");
-      if (key === "exercises") nav("/exercises");
+      if (key === "games") nav("/games");
       if (key === "progress") nav("/progress");
     } else {
       setPrimed(key);
@@ -79,10 +79,10 @@ const Home: React.FC = () => {
           <div className="w-full max-w-md scale-[1.15] md:scale-[1.25]">
             <SelectableCard
               Icon={Dumbbell}
-              label="Exercises"
-              colorVar="--accent-exercises"
-              primed={primed === "exercises"}
-              onClick={() => onCardClick("exercises")}
+              label="Games"
+              colorVar="--accent-games"
+              primed={primed === "games"}
+              onClick={() => onCardClick("games")}
               large
             />
           </div>
@@ -107,7 +107,7 @@ const Home: React.FC = () => {
         <HelpOverlay
           active={help}
           step={helpStep}
-          titles={["Modules", "Exercises", "Progress"]}
+          titles={["Modules", "Games", "Progress"]}
           descriptions={[
             "Learn everyday tasks in simple steps.",
             "Practice single movements with guidance.",
@@ -117,7 +117,7 @@ const Home: React.FC = () => {
             if (helpStep >= 2) setHelp(false);
             else setHelpStep((s) => s + 1);
           }}
-          colorVars={["--accent-modules", "--accent-exercises", "--accent-progress"]}
+          colorVars={["--accent-modules", "--accent-games", "--accent-progress"]}
         />
       </section>
     </main>

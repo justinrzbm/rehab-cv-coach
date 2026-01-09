@@ -64,7 +64,7 @@ const FlappyBall: React.FC = () => {
     if (handsRef.current) {
       handsRef.current.close();
     }
-    navigate("/exercises");
+    navigate("/games");
   };
   
   useEffect(() => {
