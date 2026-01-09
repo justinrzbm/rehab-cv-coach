@@ -7,7 +7,8 @@ import { CircularTimer } from "@/components/progress/CircularTimer";
 import { useTTS } from "@/components/tts/useTTS";
 import { useSEO } from "@/hooks/useSEO";
 import { supabase } from "@/integrations/supabase/client";
-import { connectLive } from "@/lib/live";
+import { Hands } from "@mediapipe/hands";
+import { Camera } from "@mediapipe/camera_utils";
 
 interface Task {
   name: string;
@@ -17,8 +18,6 @@ interface Task {
 
 const congrats = ["Great job!", "Awesome!", "Well done!", "Fantastic!", "You did it! 🎉"];
 const encouragement = ["Keep it up! 💪", "You're on fire! 🔥", "Nice and steady! 😊", "Great focus! 🌟"];
-
-const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? "http://localhost:8000";
 
 const ModuleRun: React.FC = () => {
   const { slug } = useParams();
@@ -52,31 +51,11 @@ const ModuleRun: React.FC = () => {
   // Used to force re-run of effects on Retry without changing idx
   const [attempt, setAttempt] = useState(0);
 
-  const [live, setLive] = useState<any>(null);
-  useEffect(() => connectLive(setLive), []);
-
-  // Debug: log every WS packet so we can see what the backend is sending
-  useEffect(() => {
-    if (!live) return;
-    // eslint-disable-next-line no-console
-    console.debug("[WS]", live);
-  }, [live]);
-
-  // Guard so we don't run onSuccess multiple times for sticky frames
-  const justAdvancedRef = useRef(false);
-  const armAdvance = () => {
-    justAdvancedRef.current = true;
-    window.setTimeout(() => (justAdvancedRef.current = false), 800);
-  };
-
-  // Session config
-  useEffect(() => {
-    fetch(`${API_BASE}/session-config`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dominant: "right", target_mode: "fixed" }),
-    }).catch(() => {});
-  }, []);
+  // MediaPipe refs
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const handsRef = useRef<Hands | null>(null);
+  const cameraRef = useRef<Camera | null>(null);
 
   // Start module attempt (if logged in)
   useEffect(() => {
@@ -93,17 +72,6 @@ const ModuleRun: React.FC = () => {
       }
     })();
   }, [slug]);
-
-  // Tell backend which task is active whenever idx OR attempt changes
-  useEffect(() => {
-    const t = tasks[idx];
-    if (!t) return;
-    fetch(`${API_BASE}/active-task`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ task: t.name, seconds: t.duration ?? undefined }),
-    }).catch(() => {});
-  }, [idx, tasks, attempt]);
 
   // --- Success helpers -------------------------------------------------------
   const doSuccess = async (message: string) => {
@@ -144,56 +112,17 @@ const ModuleRun: React.FC = () => {
     speak(t.instruction);
     setTimerRunning(Boolean(t.duration));
 
-    // DEMO BEHAVIOR:
-    // For steps 0 and 1 only (reach_bottle, grab_hold), after 25s force "Amazing!" success and advance.
-    let timerId: number;
-    if (idx === 0 || idx === 1) {
-      timerId = window.setTimeout(() => {
-        // Avoid double-advance if backend already passed
-        if (!justAdvancedRef.current) {
-          armAdvance();
-          void doSuccess("Amazing!");
-        }
-      }, 25000);
-    } else {
-      // Normal: if not successful in 25s, show fail menu
+    // If no duration timer, show fail menu after 25s
+    let timerId: number | undefined;
+    if (!t.duration) {
       timerId = window.setTimeout(() => setFailMenu(true), 25000);
     }
 
-    return () => window.clearTimeout(timerId);
+    return () => {
+      if (timerId) window.clearTimeout(timerId);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, tasks, attempt]);
-
-  // Advance when backend signals pass for the current task
-  useEffect(() => {
-    if (!live) return;
-    const current = tasks[idx]?.name;
-    if (!current) return;
-    if (justAdvancedRef.current) return;
-
-    const isForMe = (live.task === current || live.active_task === current);
-
-    // Prefer explicit event (now sticky for a few frames)
-    if (live.event === "task_passed" && isForMe) {
-      armAdvance();
-      onSuccess();
-      return;
-    }
-
-    // Fallback: trust the boolean from the live payload
-    if (isForMe && (live.passed === true || live.passed === "true")) {
-      armAdvance();
-      onSuccess();
-      return;
-    }
-
-    // Last-resort safety: if backend reports progress ~= 100% for this task, treat as success
-    if (isForMe && typeof live.progress === "number" && live.progress >= 0.999) {
-      armAdvance();
-      onSuccess();
-      return;
-    }
-  }, [live, idx, tasks]);
 
   const onTimerComplete = () => onSuccess();
 
@@ -256,13 +185,86 @@ const ModuleRun: React.FC = () => {
     return () => window.clearInterval(id);
   }, [speak]);
 
-  const t = tasks[idx];
+  // MediaPipe setup
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    const canvasElement = canvasRef.current;
+    const ctx = canvasElement?.getContext("2d");
 
-  // Progress from backend for the active task
-  const progress =
-    live?.active_task === t?.name && typeof live?.progress === "number"
-      ? Math.max(0, Math.min(1, live.progress))
-      : null;
+    if (!videoElement || !canvasElement || !ctx) {
+      return;
+    }
+
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+    });
+    handsRef.current = hands;
+
+    hands.setOptions({
+      maxNumHands: 2,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+
+    hands.onResults((results) => {
+      ctx.save();
+      ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      ctx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+      
+      if (results.multiHandLandmarks) {
+        for (const landmarks of results.multiHandLandmarks) {
+          // Draw hand landmarks
+          for (let i = 0; i < landmarks.length; i++) {
+            const landmark = landmarks[i];
+            ctx.beginPath();
+            ctx.arc(landmark.x * canvasElement.width, landmark.y * canvasElement.height, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = "#00FF00";
+            ctx.fill();
+          }
+          
+          // Draw connections
+          const connections = [
+            [0, 1], [1, 2], [2, 3], [3, 4],
+            [0, 5], [5, 6], [6, 7], [7, 8],
+            [0, 9], [9, 10], [10, 11], [11, 12],
+            [0, 13], [13, 14], [14, 15], [15, 16],
+            [0, 17], [17, 18], [18, 19], [19, 20],
+            [5, 9], [9, 13], [13, 17]
+          ];
+          
+          ctx.strokeStyle = "#00FF00";
+          ctx.lineWidth = 2;
+          for (const [start, end] of connections) {
+            const startLandmark = landmarks[start];
+            const endLandmark = landmarks[end];
+            ctx.beginPath();
+            ctx.moveTo(startLandmark.x * canvasElement.width, startLandmark.y * canvasElement.height);
+            ctx.lineTo(endLandmark.x * canvasElement.width, endLandmark.y * canvasElement.height);
+            ctx.stroke();
+          }
+        }
+      }
+      ctx.restore();
+    });
+
+    const camera = new Camera(videoElement, {
+      onFrame: async () => {
+        await hands.send({ image: videoElement });
+      },
+      width: 640,
+      height: 480,
+    });
+    cameraRef.current = camera;
+    camera.start();
+
+    return () => {
+      camera.stop();
+      hands.close();
+    };
+  }, []);
+
+  const t = tasks[idx];
 
   return (
     <main className="min-h-screen relative" style={{ background: "hsl(var(--accent-modules) / 0.06)" }}>
@@ -280,16 +282,9 @@ const ModuleRun: React.FC = () => {
 
       {/* Live camera area */}
       <div className="container mx-auto p-4">
-        <div className="relative w-full h-[60vh] bg-black/70 rounded-2xl overflow-hidden">
-          <img src={`${API_BASE}/mjpeg`} alt="preview" className="w-full h-full object-contain" />
-          <div className="absolute top-2 left-2 bg-black/60 text-white text-sm rounded px-2 py-1">
-            Task: {t?.name ?? "-"} • Detections: {live?.count ?? 0}
-          </div>
-          {progress !== null && (
-            <div className="absolute bottom-2 left-2 right-2 bg-black/40 rounded">
-              <div className="h-2 rounded" style={{ width: `${Math.round(progress * 100)}%`, background: "rgba(255,255,255,0.9)" }} />
-            </div>
-          )}
+        <div className="relative w-full h-[60vh] bg-black/70 rounded-2xl overflow-hidden flex items-center justify-center">
+          <video ref={videoRef} className="hidden" />
+          <canvas ref={canvasRef} width={640} height={480} className="max-w-full max-h-full object-contain" />
         </div>
       </div>
 
