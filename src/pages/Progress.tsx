@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { LineChart, Star } from "lucide-react";
+import { LineChart, Star, StarIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSEO } from "@/hooks/useSEO";
@@ -40,7 +40,7 @@ const BarRow: React.FC<{ bar: ModuleBar }> = ({ bar }) => {
           />
           {isPerfect && (
             <div className="absolute inset-y-0 right-1 flex items-center gap-1 text-primary">
-              <Star className="text-yellow-500 animate-pulse" size={22} />
+              <StarIcon className="text-yellow-500 animate-pulse" size={22} fill="currentColor" />
               <span className="text-sm font-semibold">congrats!</span>
             </div>
           )}
