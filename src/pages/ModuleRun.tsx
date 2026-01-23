@@ -15,6 +15,22 @@ import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import * as tf from "@tensorflow/tfjs-core";
 import "@tensorflow/tfjs-backend-webgl";
 import "@tensorflow/tfjs-backend-cpu";
+// Exercise modules
+import {
+  ReachBottleMetrics,
+  GrabHoldMetrics,
+  LiftToMouthMetrics,
+  HoldAtMouthMetrics,
+  DumpIntoMouthMetrics,
+  PlaceCupDownMetrics,
+} from "@/lib/exercises";
+import {
+  getIndexFingerTip,
+  getWrist,
+  getFingertips,
+  getMouthCenter,
+  getEarDistance,
+} from "@/lib/exercises/helpers";
 
 interface Task {
   name: string;
@@ -72,11 +88,14 @@ const ModuleRun: React.FC = () => {
   const poseResultsRef = useRef<PoseResults | null>(null);
   const faceMeshResultsRef = useRef<FaceMeshResults | null>(null);
   
-  // Task-specific tracking
-  const reachStartTimeRef = useRef<number | null>(null);
-  const reachInitialHandPosRef = useRef<{x: number, y: number} | null>(null);
-  const gripStartTimeRef = useRef<number | null>(null);
-  const mouthHoldStartRef = useRef<number | null>(null);
+  // Exercise instances (one per task type)
+  const reachBottleRef = useRef<ReachBottleMetrics | null>(null);
+  const grabHoldRef = useRef<GrabHoldMetrics | null>(null);
+  const liftToMouthRef = useRef<LiftToMouthMetrics | null>(null);
+  const holdAtMouthRef = useRef<HoldAtMouthMetrics | null>(null);
+  const dumpIntoMouthRef = useRef<DumpIntoMouthMetrics | null>(null);
+  const placeCupDownRef = useRef<PlaceCupDownMetrics | null>(null);
+  const placeCupDownStartedRef = useRef<boolean>(false);
   const taskCompletedRef = useRef<boolean>(false);
 
   // Start module attempt (if logged in)
@@ -138,12 +157,39 @@ const ModuleRun: React.FC = () => {
     if (!tasks.length) return;
     const t = tasks[idx];
     
-    // Reset task completion flag and tracking refs
+    // Reset task completion flag and initialize exercise for current task
     taskCompletedRef.current = false;
-    reachStartTimeRef.current = null;
-    reachInitialHandPosRef.current = null;
-    gripStartTimeRef.current = null;
-    mouthHoldStartRef.current = null;
+    
+    // Initialize exercise instance for current task
+    const currentTask = tasks[idx];
+    if (currentTask) {
+      switch (currentTask.name) {
+        case "reach_bottle":
+          if (!reachBottleRef.current) reachBottleRef.current = new ReachBottleMetrics();
+          reachBottleRef.current.start();
+          break;
+        case "grab_hold":
+          if (!grabHoldRef.current) grabHoldRef.current = new GrabHoldMetrics();
+          grabHoldRef.current.start();
+          break;
+        case "lift_to_mouth":
+          if (!liftToMouthRef.current) liftToMouthRef.current = new LiftToMouthMetrics();
+          break;
+        case "hold_at_mouth":
+          if (!holdAtMouthRef.current) holdAtMouthRef.current = new HoldAtMouthMetrics({ requiredSecs: currentTask.duration || 5.0 });
+          holdAtMouthRef.current.reset();
+          break;
+        case "dump_into_mouth":
+          if (!dumpIntoMouthRef.current) dumpIntoMouthRef.current = new DumpIntoMouthMetrics();
+          dumpIntoMouthRef.current.reset();
+          break;
+        case "place_cup_down":
+          if (!placeCupDownRef.current) placeCupDownRef.current = new PlaceCupDownMetrics();
+          placeCupDownRef.current.reset();
+          placeCupDownStartedRef.current = false;
+          break;
+      }
+    }
     
     // Delay instruction by 1 second to let CV stabilize
     const instructionTimer = window.setTimeout(() => {
@@ -344,62 +390,6 @@ const ModuleRun: React.FC = () => {
 
     let animationFrameId: number;
 
-    // Helper functions
-    const distance = (p1: {x: number, y: number}, p2: {x: number, y: number}) => {
-      return Math.hypot(p1.x - p2.x, p1.y - p2.y);
-    };
-
-    const getMouthCenter = (faceLandmarks: any, width: number, height: number) => {
-      if (!faceLandmarks || faceLandmarks.length === 0) return null;
-      const landmarks = faceLandmarks[0].landmark;
-      if (!landmarks || landmarks.length < 15) return null;
-      // Indices 13 (upper lip) and 14 (lower lip)
-      const upper = landmarks[13];
-      const lower = landmarks[14];
-      return {
-        x: ((upper.x + lower.x) / 2) * width,
-        y: ((upper.y + lower.y) / 2) * height
-      };
-    };
-
-    const getEarDistance = (poseLandmarks: any, width: number, height: number) => {
-      if (!poseLandmarks || !poseLandmarks.landmark) return null;
-      const leftEar = poseLandmarks.landmark[7];  // LEFT_EAR
-      const rightEar = poseLandmarks.landmark[8]; // RIGHT_EAR
-      if (!leftEar || !rightEar || leftEar.visibility < 0.5 || rightEar.visibility < 0.5) return null;
-      return distance(
-        {x: leftEar.x * width, y: leftEar.y * height},
-        {x: rightEar.x * width, y: rightEar.y * height}
-      );
-    };
-
-    const getIndexFingerTip = (handLandmarks: any, width: number, height: number) => {
-      if (!handLandmarks || handLandmarks.length === 0) return null;
-      const tip = handLandmarks[0][8]; // INDEX_FINGER_TIP
-      return {x: tip.x * width, y: tip.y * height};
-    };
-
-    const checkNearMouth = (bottlePos: {x: number, y: number}, mouthPos: {x: number, y: number}, earDist: number, threshold: number = 0.8) => {
-      const dist = distance(bottlePos, mouthPos);
-      return dist <= threshold * earDist;
-    };
-
-    const checkGripStability = (handLandmarks: any, bottleBox: any, width: number, height: number) => {
-      if (!handLandmarks || handLandmarks.length === 0 || !bottleBox) return false;
-      const landmarks = handLandmarks[0];
-      
-      // Check if thumb (4) and index (8) are near bottle center
-      const thumb = {x: landmarks[4].x * width, y: landmarks[4].y * height};
-      const index = {x: landmarks[8].x * width, y: landmarks[8].y * height};
-      const bottleCenter = {x: bottleBox.x + bottleBox.w / 2, y: bottleBox.y + bottleBox.h / 2};
-      
-      const thumbDist = distance(thumb, bottleCenter);
-      const indexDist = distance(index, bottleCenter);
-      const gripRadius = Math.max(bottleBox.w, bottleBox.h) * 0.6;
-      
-      return thumbDist < gripRadius && indexDist < gripRadius;
-    };
-
     // Main rendering loop
     const renderFrame = async () => {
       const currentTask = tasks[idx];
@@ -472,90 +462,101 @@ const ModuleRun: React.FC = () => {
         }
       }
 
-      // Task-specific logic
+      // Extract data from MediaPipe results
       const bottle = bottlePosRef.current;
       const handLandmarks = handResultsRef.current?.multiHandLandmarks;
       const indexTip = getIndexFingerTip(handLandmarks, w, h);
+      const wrist = getWrist(handLandmarks, w, h);
+      const fingertips = getFingertips(handLandmarks, w, h);
       const mouthPos = getMouthCenter(faceMeshResultsRef.current?.multiFaceLandmarks, w, h);
       const earDist = getEarDistance(poseResultsRef.current?.poseLandmarks, w, h);
 
-      // Draw mouth indicator
-      if (mouthPos) {
-        ctx.beginPath();
-        ctx.arc(mouthPos.x, mouthPos.y, 8, 0, 2 * Math.PI);
-        ctx.fillStyle = "#FFFF00";
-        ctx.fill();
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
+      const currentTime = Date.now() / 1000; // Convert to seconds
 
-      // Task: reach_bottle
-      if (currentTask.name === "reach_bottle" && bottle && indexTip && !taskCompletedRef.current) {
-        if (!reachStartTimeRef.current) {
-          reachStartTimeRef.current = Date.now();
-          reachInitialHandPosRef.current = indexTip;
-        }
-        
-        const bottleCenter = {x: bottle.x + bottle.w / 2, y: bottle.y + bottle.h / 2};
-        const dist = distance(indexTip, bottleCenter);
-        const threshold = Math.max(bottle.w, bottle.h) * 0.8;
-        
-        // Draw reach line
-        ctx.beginPath();
-        ctx.moveTo(indexTip.x, indexTip.y);
-        ctx.lineTo(bottleCenter.x, bottleCenter.y);
-        ctx.strokeStyle = dist < threshold ? "#00FF00" : "#FF0000";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        if (dist < threshold) {
-          taskCompletedRef.current = true;
-          setTimeout(() => onSuccess(), 500);
-        }
-      }
-
-      // Task: grab_hold
-      if (currentTask.name === "grab_hold" && bottle && handLandmarks && !taskCompletedRef.current) {
-        const isGripping = checkGripStability(handLandmarks, bottle, w, h);
-        if (isGripping) {
-          if (!gripStartTimeRef.current) {
-            gripStartTimeRef.current = Date.now();
-          }
-          const elapsed = (Date.now() - gripStartTimeRef.current) / 1000;
-          if (elapsed >= 2) {
+      // Task-specific logic using exercise modules
+      if (currentTask.name === "reach_bottle" && reachBottleRef.current && !taskCompletedRef.current) {
+        if (bottle && indexTip) {
+          const bottleCenter = { x: bottle.x + bottle.w / 2, y: bottle.y + bottle.h / 2 };
+          const result = reachBottleRef.current.update(currentTime, indexTip, bottleCenter);
+          reachBottleRef.current.drawOverlay(ctx, indexTip, bottleCenter, result);
+          
+          if (result.passed) {
             taskCompletedRef.current = true;
             setTimeout(() => onSuccess(), 500);
           }
-        } else {
-          gripStartTimeRef.current = null;
         }
       }
 
-      // Task: lift_to_mouth / hold_at_mouth
-      if ((currentTask.name === "lift_to_mouth" || currentTask.name === "hold_at_mouth") && bottle && mouthPos && earDist && !taskCompletedRef.current) {
-        const bottleCenter = {x: bottle.x + bottle.w / 2, y: bottle.y + bottle.h / 2};
-        const nearMouth = checkNearMouth(bottleCenter, mouthPos, earDist);
-        
-        // Draw proximity circle
-        ctx.beginPath();
-        ctx.arc(mouthPos.x, mouthPos.y, earDist * 0.8, 0, 2 * Math.PI);
-        ctx.strokeStyle = nearMouth ? "#00FF00" : "#FF0000";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        if (nearMouth) {
-          if (currentTask.name === "lift_to_mouth") {
+      if (currentTask.name === "grab_hold" && grabHoldRef.current && !taskCompletedRef.current) {
+        if (bottle) {
+          const bottleCenter = { x: bottle.x + bottle.w / 2, y: bottle.y + bottle.h / 2 };
+          const result = grabHoldRef.current.update(currentTime, fingertips, bottleCenter, bottle.w, bottle.h);
+          grabHoldRef.current.drawOverlay(ctx, fingertips, bottleCenter, bottle.w, bottle.h, result);
+          
+          // Pass when done (5 second hold with stability)
+          if (result.done && result.passed) {
             taskCompletedRef.current = true;
             setTimeout(() => onSuccess(), 500);
-          } else if (currentTask.name === "hold_at_mouth") {
-            if (!mouthHoldStartRef.current) {
-              mouthHoldStartRef.current = Date.now();
-            }
-            // Timer will handle success
           }
-        } else {
-          mouthHoldStartRef.current = null;
+        }
+      }
+
+      if (currentTask.name === "lift_to_mouth" && liftToMouthRef.current && !taskCompletedRef.current) {
+        if (bottle && mouthPos && earDist) {
+          const bottleCenter = { x: bottle.x + bottle.w / 2, y: bottle.y + bottle.h / 2 };
+          const result = liftToMouthRef.current.update(bottleCenter, mouthPos, earDist);
+          liftToMouthRef.current.drawOverlay(ctx, bottleCenter, mouthPos, earDist, result);
+          
+          if (result.reached) {
+            taskCompletedRef.current = true;
+            setTimeout(() => onSuccess(), 500);
+          }
+        }
+      }
+
+      if (currentTask.name === "hold_at_mouth" && holdAtMouthRef.current && !taskCompletedRef.current) {
+        if (bottle && mouthPos && earDist) {
+          const bottleCenter = { x: bottle.x + bottle.w / 2, y: bottle.y + bottle.h / 2 };
+          const result = holdAtMouthRef.current.update(currentTime, bottleCenter, mouthPos, earDist);
+          holdAtMouthRef.current.drawOverlay(ctx, bottleCenter, mouthPos, earDist, result);
+          
+          // Timer component handles success via onTimerComplete when passed
+          if (result.passed) {
+            taskCompletedRef.current = true;
+            setTimeout(() => onSuccess(), 500);
+          }
+        }
+      }
+
+      if (currentTask.name === "dump_into_mouth" && dumpIntoMouthRef.current && !taskCompletedRef.current) {
+        if (wrist && indexTip) {
+          const result = dumpIntoMouthRef.current.update(currentTime, wrist, indexTip);
+          dumpIntoMouthRef.current.drawOverlay(ctx, wrist, indexTip, result);
+          
+          if (result.passed) {
+            taskCompletedRef.current = true;
+            setTimeout(() => onSuccess(), 500);
+          }
+        }
+      }
+
+      if (currentTask.name === "place_cup_down" && placeCupDownRef.current && !taskCompletedRef.current) {
+        if (bottle) {
+          const bottleCenter = { x: bottle.x + bottle.w / 2, y: bottle.y + bottle.h / 2 };
+          // Start tracking when we first see the bottle
+          if (!placeCupDownStartedRef.current) {
+            placeCupDownRef.current.start(bottleCenter, bottle.h);
+            placeCupDownStartedRef.current = true;
+          }
+          
+          const bottleBottomY = bottle.y + bottle.h;
+          const result = placeCupDownRef.current.update(currentTime, bottleCenter, bottleBottomY, h);
+          placeCupDownRef.current.drawOverlay(ctx, bottleCenter, bottleBottomY, h, result);
+          
+          if (result.passed) {
+            taskCompletedRef.current = true;
+            setTimeout(() => onSuccess(), 500);
+          }
         }
       }
 

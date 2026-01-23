@@ -1,11 +1,16 @@
+# Backend requirements (minimal - frontend handles CV in browser)
 fastapi
 uvicorn[standard]
-opencv-python
-numpy
-sqlmodel
-sqlalchemy
-aiosqlite
-python-multipart
-ultralytics
-mediapipe
-streamlit
+opencv-python>=4.8.0
+ultralytics>=8.0.0
+mediapipe>=0.10.0
+numpy>=1.24.0
+
+# Web Application Framework
+streamlit>=1.28.0
+
+# Image Processing
+Pillow>=10.0.0
+
+# Speech Recognition
+SpeechRecognition>=3.10.0
