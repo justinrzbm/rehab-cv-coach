@@ -7,5 +7,6 @@ else
     echo "Port 8000 is free"
 fi
 
+npm install
 npm run build 
 npm start
