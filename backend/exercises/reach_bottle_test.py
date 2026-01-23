@@ -4,21 +4,33 @@
 import cv2
 import time
 import numpy as np
+import os
+import sys
 from collections import deque
 from ultralytics import YOLO
 import mediapipe as mp
 import math
 from exercises.reach_bottle import ReachBottleMetrics
 
+# Import shared config
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from config import (YOLO_IMG_SIZE, PROCESSING_WIDTH, PROCESSING_HEIGHT, DISPLAY_WIDTH, DISPLAY_HEIGHT,
+                    FULLSCREEN_WINDOW, YOLO_CONF, FONT_SCALE_SMALL, FONT_SCALE_MEDIUM, 
+                    FONT_SCALE_LARGE, FONT_THICKNESS, UI_TEXT_COLOR)
+from ui_utils import draw_text_with_bg
+
 # ---------- CONFIG ----------
 MODEL_PATH   = "../yolov10b.pt"  # or yolov8n/s/m/l/x.pt
-CONF         = 0.80           # YOLO confidence
-IMG_SIZE     = 768            # try 640 on CPU for more FPS; 832/960 on GPU
-DEVICE       = "mps"          # 0 for CUDA, "cpu", or "mps" (Apple)
+CONF         = YOLO_CONF
+IMG_SIZE     = YOLO_IMG_SIZE
+DEVICE       = "cpu"          # 0 for CUDA, "cpu", or "mps" (Apple)
 HALF         = False          # set True on CUDA for FP16
 CAM_INDEX    = 0
-FRAME_W      = 1280           # camera request (try 1280x720)
-FRAME_H      = 720
+FRAME_W      = PROCESSING_WIDTH
+FRAME_H      = PROCESSING_HEIGHT
+DISPLAY_W    = DISPLAY_WIDTH
+DISPLAY_H    = DISPLAY_HEIGHT
+FULLSCREEN   = FULLSCREEN_WINDOW
 FLIP_VIEW    = True           # mirror preview to match movement
 TARGET_CLASS = "bottle"       # Only detect bottles
 ELBOW_VIS_TH = 0.30
@@ -202,6 +214,12 @@ def reach_test(hand = 'r', taggle = 'fixed'):
     if not cap.isOpened():
         raise RuntimeError("Cannot open webcam")
 
+    # Create window and set fullscreen if enabled
+    window_name = "Reach Bottle Test"
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    if FULLSCREEN:
+        cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    
     # MediaPipe (lighter configs)
     hands = mp_hands.Hands(
         static_image_mode=False, max_num_hands=2, model_complexity=0,
@@ -294,19 +312,22 @@ def reach_test(hand = 'r', taggle = 'fixed'):
 
             # --- Update reach metrics ---
             metrics_result = None
+            reach_status_text = None
+            reach_status_color = UI_TEXT_COLOR
+            reach_status_extra = None
+            
             if chosen_index_px and top_bottle_center and reach_metrics.start_signal_time is not None:
                 current_time = time.time()
                 metrics_result = reach_metrics.update(current_time, chosen_index_px, top_bottle_center)
                 
-                # Draw reach status on screen (only status, not metrics)
-                y_offset = 120
-                cv2.putText(frame, f"Reach Status: {metrics_result['status']}", 
-                            (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+                # Store status for display after resize
+                reach_status_text = f"Reach Status: {metrics_result['status']}"
+                reach_status_color = (255, 255, 0)
                 
-                # Draw line from hand to bottle
+                # Draw line from hand to bottle (on processing frame)
                 cv2.line(frame, chosen_index_px, top_bottle_center, (255, 255, 0), 2)
                 
-                # Draw grasp threshold circle around bottle
+                # Draw grasp threshold circle around bottle (on processing frame)
                 cv2.circle(frame, top_bottle_center, REACH_GRASP_DISTANCE, (255, 255, 0), 2)
                 
                 # Print results when reach is completed
@@ -345,18 +366,14 @@ def reach_test(hand = 'r', taggle = 'fixed'):
                     reach_metrics.reset()
             elif reach_metrics.start_signal_time is not None:
                 # Test started but no bottle detected
-                y_offset = 120
-                cv2.putText(frame, "Reach Status: Waiting for bottle detection", 
-                            (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
-                cv2.putText(frame, "Place a bottle in view", 
-                            (10, y_offset + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+                reach_status_text = "Reach Status: Waiting for bottle detection"
+                reach_status_color = (255, 0, 0)
+                reach_status_extra = "Place a bottle in view"
             else:
                 # No test started
-                y_offset = 120
-                cv2.putText(frame, "Reach Status: Press 's' to start test", 
-                            (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (128, 128, 128), 2)
-                cv2.putText(frame, "Ensure bottle and right hand are visible", 
-                            (10, y_offset + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (128, 128, 128), 1)
+                reach_status_text = "Reach Status: Press 's' to start test"
+                reach_status_color = (128, 128, 128)
+                reach_status_extra = "Ensure bottle and right hand are visible"
 
             # FPS (smoothed)
             now = time.time()
@@ -364,17 +381,56 @@ def reach_test(hand = 'r', taggle = 'fixed'):
             prev_t = now
             fps_deque.append(fps)
             fps_avg = sum(fps_deque) / len(fps_deque)
-            cv2.putText(frame, f"FPS: {fps_avg:.1f}", (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            
+            # Resize frame for display
+            display_frame = cv2.resize(frame, (DISPLAY_W, DISPLAY_H), interpolation=cv2.INTER_LINEAR)
+            
+            draw_text_with_bg(display_frame, f"FPS: {fps_avg:.1f}", (10, 40),
+                             FONT_SCALE_MEDIUM, FONT_THICKNESS)
 
             # Display help text
-            help_y = h - 100
-            cv2.putText(frame, "Controls: 's'=start test, 'r'=reset, 'q'=quit", 
-                        (10, help_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
-            cv2.putText(frame, "Reach Test: Extend your right hand toward the detected bottle", 
-                        (10, help_y + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+            help_y = DISPLAY_H - 100
+            draw_text_with_bg(display_frame, "Controls: 's'=start test, 'r'=reset, 'q'=quit", 
+                             (10, help_y), FONT_SCALE_SMALL, FONT_THICKNESS)
+            draw_text_with_bg(display_frame, "Reach Test: Extend your right hand toward the detected bottle", 
+                             (10, help_y + 35), FONT_SCALE_SMALL, FONT_THICKNESS)
+            
+            # Draw reach status on display frame
+            if reach_status_text:
+                y_offset = 90
+                draw_text_with_bg(
+                    display_frame,
+                    reach_status_text,
+                    (10, y_offset),
+                    FONT_SCALE_MEDIUM,
+                    FONT_THICKNESS,
+                    text_color=reach_status_color
+                )
+                if reach_status_extra:
+                    draw_text_with_bg(
+                        display_frame,
+                        reach_status_extra,
+                        (10, y_offset + 40),
+                        FONT_SCALE_SMALL,
+                        FONT_THICKNESS,
+                        text_color=reach_status_color
+                    )
+            draw_text_with_bg(
+                display_frame,
+                "Controls: 's'=start test, 'r'=reset, 'q'=quit",
+                (10, help_y),
+                FONT_SCALE_SMALL,
+                FONT_THICKNESS
+            )
+            draw_text_with_bg(
+                display_frame,
+                "Reach Test: Extend your right hand toward the detected bottle",
+                (10, help_y + 35),
+                FONT_SCALE_SMALL,
+                FONT_THICKNESS
+            )
 
-            cv2.imshow("Reach Bottle Test - Standalone Exercise", frame)
+            cv2.imshow(window_name, display_frame)
 
             # standard quit
             if key == ord('q'):
@@ -388,4 +444,3 @@ def reach_test(hand = 'r', taggle = 'fixed'):
 # if __name__ == "__main__":
 #     result = main()
 #     print(result)
-

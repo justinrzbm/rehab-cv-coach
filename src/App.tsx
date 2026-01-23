@@ -10,7 +10,9 @@ import GamesPage from "@/pages/Games";
 import ProgressPage from "@/pages/Progress";
 import ModuleInfo from "@/pages/ModuleInfo";      // NEW
 import ModuleSetup from "@/pages/ModuleSetup";    // UPDATED (tutorial)
+import ModuleBackendPrompt from "@/pages/ModuleBackendPrompt";
 import ModuleRun from "@/pages/ModuleRun";        // EXISTING
+import BackendExercises from "@/pages/BackendExercises";
 import NotFound from "@/pages/NotFound";
 
 import StarShooter from "@/pages/StarShooter"
@@ -31,7 +33,9 @@ const App = () => (
           <Route path="/modules" element={<ModulesPage />} />
           <Route path="/modules/:slug/info" element={<ModuleInfo />} />
           <Route path="/modules/:slug/setup" element={<ModuleSetup />} />
+          <Route path="/modules/:slug/backend-prompt" element={<ModuleBackendPrompt />} />
           <Route path="/modules/:slug/run" element={<ModuleRun />} />
+          <Route path="/backend-exercises" element={<BackendExercises />} />
           <Route path="/games" element={<GamesPage />} />
           <Route path="/games/FlappyBall" element={<FlappyBall />} />
           <Route path="/games/ScreenCleaner" element={<BoardCleanerGame />} />

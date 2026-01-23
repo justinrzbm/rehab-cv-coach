@@ -1,22 +1,33 @@
 import cv2
 import time
 import numpy as np
+import os
+import sys
 from collections import deque
 from ultralytics import YOLO
 import mediapipe as mp
 import math
 from exercises.grab_hold import ReadyGraspHold
 
+# Import shared config
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from config import (YOLO_IMG_SIZE, PROCESSING_WIDTH, PROCESSING_HEIGHT, DISPLAY_WIDTH, DISPLAY_HEIGHT,
+                    FULLSCREEN_WINDOW, YOLO_CONF, FONT_SCALE_SMALL, FONT_SCALE_MEDIUM, 
+                    FONT_SCALE_LARGE, FONT_THICKNESS, UI_TEXT_COLOR)
+from ui_utils import draw_text_with_bg
 
 # ---------- CONFIG ----------
 MODEL_PATH   = "../yolov10b.pt"
-CONF         = 0.80
-IMG_SIZE     = 768
-DEVICE       = "mps"
+CONF         = YOLO_CONF
+IMG_SIZE     = YOLO_IMG_SIZE
+DEVICE       = "cpu"
 HALF         = False
 CAM_INDEX    = 0
-FRAME_W      = 1280
-FRAME_H      = 720
+FRAME_W      = PROCESSING_WIDTH
+FRAME_H      = PROCESSING_HEIGHT
+DISPLAY_W    = DISPLAY_WIDTH
+DISPLAY_H    = DISPLAY_HEIGHT
+FULLSCREEN   = FULLSCREEN_WINDOW
 FLIP_VIEW    = True
 TARGET_CLASS = "bottle"
 SECONDARY_ANGLES = []
@@ -272,19 +283,22 @@ def grab_test(hand = 'r', taggle = 'fixed'):
                 grab_announced = False
                 # removed premature return 0
 
+            # Resize frame for display
+            display_frame = cv2.resize(frame, (DISPLAY_W, DISPLAY_H), interpolation=cv2.INTER_LINEAR)
+            
             hud1 = f"Dominant: {rh.dominant.capitalize()}   {mode_label}   (S: snap, L/R: switch hand)   READY uses INDEX"
-            cv2.putText(frame, hud1, (10, 32), cv2.FONT_HERSHEY_DUPLEX, 0.8, (220, 255, 220), 2)
+            draw_text_with_bg(display_frame, hud1, (10, 40), FONT_SCALE_MEDIUM, FONT_THICKNESS)
             if mouse_last:
-                cv2.putText(frame, mouse_last, (10, 60), cv2.FONT_HERSHEY_DUPLEX, 0.7, (220, 220, 255), 2)
+                draw_text_with_bg(display_frame, mouse_last, (10, 80), FONT_SCALE_SMALL, FONT_THICKNESS)
 
             now_t = time.time()
             fps = 1.0 / max(1e-6, (now_t - prev_t))
             prev_t = now_t
             fps_deque.append(fps)
             fps_avg = sum(fps_deque) / len(fps_deque)
-            cv2.putText(frame, f"FPS: {fps_avg:.1f}", (w-180, 32), cv2.FONT_HERSHEY_DUPLEX, 0.8, (0, 255, 0), 2)
+            draw_text_with_bg(display_frame, f"FPS: {fps_avg:.1f}", (DISPLAY_W-200, 40), FONT_SCALE_MEDIUM, FONT_THICKNESS)
 
-            cv2.imshow(win_name, frame)
+            cv2.imshow(win_name, display_frame)
 
     finally:
         hands.close(); pose.close()

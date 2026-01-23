@@ -1,4 +1,3 @@
-# Backend requirements (minimal - frontend handles CV in browser)
 fastapi
 uvicorn[standard]
 opencv-python>=4.8.0

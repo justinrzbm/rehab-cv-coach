@@ -30,7 +30,7 @@ const HELP_SEQUENCE = [
 export default function Index() {
   const [showGreeting, setShowGreeting] = useState(false);
   const [helpStep, setHelpStep] = useState<number | null>(null);
-  const userName = "Justin"; // TODO: wire to real user state
+  const userName = "Resident"; // TODO: wire to real user state
   const nav = useNavigate();
   const { speak, stop } = useTTS(true);
 

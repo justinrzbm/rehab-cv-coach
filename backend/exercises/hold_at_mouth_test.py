@@ -2,19 +2,31 @@ import cv2
 import time
 import math
 import numpy as np
+import os
+import sys
 from collections import deque
 from ultralytics import YOLO
 import mediapipe as mp
 
+# Import shared config
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from config import (YOLO_IMG_SIZE, PROCESSING_WIDTH, PROCESSING_HEIGHT, DISPLAY_WIDTH, DISPLAY_HEIGHT,
+                    FULLSCREEN_WINDOW, YOLO_CONF, FONT_SCALE_SMALL, FONT_SCALE_MEDIUM, 
+                    FONT_SCALE_LARGE, FONT_THICKNESS, UI_TEXT_COLOR)
+from ui_utils import draw_text_with_bg
+
 # -------- CONFIG --------
 MODEL_PATH   = "yolov10b.pt"
-CONF         = 0.50
-IMG_SIZE     = 768
-DEVICE       = "mps"           # 0 (CUDA), "cpu", "mps"
+CONF         = YOLO_CONF
+IMG_SIZE     = YOLO_IMG_SIZE
+DEVICE       = "cpu"           # 0 (CUDA), "cpu", "mps"
 HALF         = False
 CAM_INDEX    = 0
-FRAME_W      = 1280
-FRAME_H      = 720
+FRAME_W      = PROCESSING_WIDTH
+FRAME_H      = PROCESSING_HEIGHT
+DISPLAY_W    = DISPLAY_WIDTH
+DISPLAY_H    = DISPLAY_HEIGHT
+FULLSCREEN   = FULLSCREEN_WINDOW
 FLIP_VIEW    = True
 TARGET_CLASS = "bottle"
 IOU_NMS      = 0.50
@@ -261,18 +273,21 @@ def hold(hand = "r"):
                     hold_start_time = None
                     test_completed = False
 
+            # Resize frame for display
+            display_frame = cv2.resize(frame, (DISPLAY_W, DISPLAY_H), interpolation=cv2.INTER_LINEAR)
+            
             mode_text = f"Ref: {REF_MODE.upper()}  (1/2/3 or A=auto)   C=calibrate   Q=quit"
-            cv2.putText(frame, mode_text, (10, 30), cv2.FONT_HERSHEY_DUPLEX, 0.75, (220, 255, 220), 2)
+            draw_text_with_bg(display_frame, mode_text, (10, 40), FONT_SCALE_MEDIUM, FONT_THICKNESS)
 
             now = time.time()
             fps = 1.0 / max(1e-6, (now - prev_t))
             prev_t = now
             fps_deque.append(fps)
             fps_avg = sum(fps_deque) / len(fps_deque)
-            cv2.putText(frame, f"{fps_avg:.1f} FPS", (w-150, 30),
-                        cv2.FONT_HERSHEY_DUPLEX, 0.75, (0, 255, 180), 2)
+            draw_text_with_bg(display_frame, f"{fps_avg:.1f} FPS", (DISPLAY_W-200, 40),
+                             FONT_SCALE_MEDIUM, FONT_THICKNESS)
 
-            cv2.imshow(win, frame)
+            cv2.imshow(win, display_frame)
 
     finally:
         try:
@@ -280,4 +295,3 @@ def hold(hand = "r"):
         except Exception:
             pass
         cap.release(); cv2.destroyAllWindows()
-

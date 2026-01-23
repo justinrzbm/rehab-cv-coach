@@ -8,7 +8,10 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "npm run build && cd backend && python -m uvicorn server:app --host 0.0.0.0 --port 8000",
+    "start:cv": "npm run build && cd backend && python -m uvicorn app:app --host 0.0.0.0 --port 8000",
+    "start:backend": "cd backend && python -m uvicorn server:app --host 0.0.0.0 --port 8000 --reload"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -91,6 +94,6 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
-    "vite": "^5.4.19"
+    "vite": "^7.3.1"
   }
 }

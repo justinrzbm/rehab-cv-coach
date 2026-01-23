@@ -1,19 +1,31 @@
 import cv2
 import time
 import numpy as np
+import os
+import sys
 from collections import deque
 from ultralytics import YOLO
 import mediapipe as mp
 import math
 
+# Import shared config
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from config import (YOLO_IMG_SIZE, PROCESSING_WIDTH, PROCESSING_HEIGHT, DISPLAY_WIDTH, DISPLAY_HEIGHT,
+                    FULLSCREEN_WINDOW, YOLO_CONF, FONT_SCALE_SMALL, FONT_SCALE_MEDIUM, 
+                    FONT_SCALE_LARGE, FONT_THICKNESS, UI_TEXT_COLOR)
+from ui_utils import draw_text_with_bg
+
 # ---------- CONFIG ----------
 MODEL_PATH   = "../yolov10b.pt"
-CONF         = 0.80
-IMG_SIZE     = 768
-DEVICE       = "mps"
+CONF         = YOLO_CONF
+IMG_SIZE     = YOLO_IMG_SIZE
+DEVICE       = "cpu"
 CAM_INDEX    = 0
-FRAME_W      = 1280
-FRAME_H      = 720
+FRAME_W      = PROCESSING_WIDTH
+FRAME_H      = PROCESSING_HEIGHT
+DISPLAY_W    = DISPLAY_WIDTH
+DISPLAY_H    = DISPLAY_HEIGHT
+FULLSCREEN   = FULLSCREEN_WINDOW
 FLIP_VIEW    = True
 TARGET_CLASS = "bottle"
 FPS_SMOOTH_N = 20
@@ -162,6 +174,9 @@ def dump():
             elif key == ord('q'):
                 break
 
+            # Resize frame for display
+            display_frame = cv2.resize(frame, (DISPLAY_W, DISPLAY_H), interpolation=cv2.INTER_LINEAR)
+            
             # Status display
             if test_started and not test_complete:
                 status = "POURING - Tilt bottle smoothly"
@@ -170,10 +185,9 @@ def dump():
             else:
                 status = "Press 's' to start test"
             
-            cv2.putText(frame, status, (10, 60),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 200), 2)
+            draw_text_with_bg(display_frame, status, (10, 60), FONT_SCALE_MEDIUM, FONT_THICKNESS)
 
-            cv2.imshow("Dump into Mouth Test", frame)
+            cv2.imshow("Dump into Mouth Test", display_frame)
 
     finally:
         hands.close()

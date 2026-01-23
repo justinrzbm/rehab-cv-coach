@@ -116,7 +116,7 @@ const ModuleSetup: React.FC = () => {
         {/* Next button */}
         {showNext && (
           <div className="flex justify-center w-full pt-1">
-            <Button size="lg" onClick={() => nav(`/modules/${slug}/run`)}>
+            <Button size="lg" onClick={() => nav(`/modules/${slug}/backend-prompt`)}>
               Next
             </Button>
           </div>
